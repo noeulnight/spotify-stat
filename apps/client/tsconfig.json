@@ -1,5 +1,5 @@
 {
-  "extends": ["@your_spotify/dev/tsconfig.json"],
+  "extends": ["@spotify-stat/dev/tsconfig.json"],
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
     "jsx": "react-jsx"

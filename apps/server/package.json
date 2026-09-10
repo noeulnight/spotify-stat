@@ -1,6 +1,6 @@
 {
-  "name": "@your_spotify/server",
-  "version": "1.20.1",
+  "name": "@spotify-stat/server",
+  "version": "1.21.0",
   "private": true,
   "scripts": {
     "build": "rsbuild build",
@@ -36,7 +36,7 @@
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.1.0",
     "@types/node": "^26.0.0",
-    "@your_spotify/dev": "workspace:*",
+    "@spotify-stat/dev": "workspace:*",
     "concurrently": "^10.0.3",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",

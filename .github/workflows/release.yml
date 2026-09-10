@@ -1,38 +1,45 @@
 ---
-
 name: Release CI
 
 on:
   push:
     tags:
-      - '*'
+      - "*"
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux/amd64
+            suffix: amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            suffix: arm64
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Verify tag matches package.json before pushing
+        run: |
+          for PKG_PATH in "./package.json" "./apps/client/package.json" "./apps/server/package.json"; do
+            if [ -f "$PKG_PATH" ] && [ "$(node -p "require('$PKG_PATH').version")" != "${GITHUB_REF_NAME}" ]; then
+              echo "Error: $PKG_PATH version doesn't match tag ${GITHUB_REF_NAME}"
+              exit 1
+            fi
+          done
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Docker metadata
-        id: docker-meta
-        uses: docker/metadata-action@v5
-        with:
-          images: yooooomi/your_spotify # required dummy value, will not be used
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -41,43 +48,61 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get current tag
-        id: tag
-        uses: "WyriHaximus/github-action-get-previous-tag@master"
-
-      - name: Verify tag matches package.json before pushing
-        run: |
-          for PKG_PATH in "./package.json" "./apps/client/package.json" "./apps/server/package.json"; do
-            if [ -f "$PKG_PATH" ] && [ "$(node -p "require('$PKG_PATH').version")" != "${{ steps.tag.outputs.tag }}" ]; then
-              echo "Error: $PKG_PATH version doesn't match tag ${{ steps.tag.outputs.tag }}"
-              exit 1
-            fi
-          done
-
       - name: Build and push client release
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.client.production
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
           push: true
-          labels: ${{ steps.docker-meta.outputs.labels }}
           tags: |
-            yooooomi/your_spotify_client:latest
-            yooooomi/your_spotify_client:${{ steps.tag.outputs.tag }}
-            ghcr.io/yooooomi/your_spotify_client:latest
-            ghcr.io/yooooomi/your_spotify_client:${{ steps.tag.outputs.tag }}
+            ghcr.io/${{ github.repository_owner }}/spotify-stat-client:latest-${{ matrix.suffix }}
+            ghcr.io/${{ github.repository_owner }}/spotify-stat-client:${{ github.ref_name }}-${{ matrix.suffix }}
 
       - name: Build and push server release
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.server.production
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
           push: true
-          labels: ${{ steps.docker-meta.outputs.labels }}
           tags: |
-            yooooomi/your_spotify_server:latest
-            yooooomi/your_spotify_server:${{ steps.tag.outputs.tag }}
-            ghcr.io/yooooomi/your_spotify_server:latest
-            ghcr.io/yooooomi/your_spotify_server:${{ steps.tag.outputs.tag }}
+            ghcr.io/${{ github.repository_owner }}/spotify-stat-server:latest-${{ matrix.suffix }}
+            ghcr.io/${{ github.repository_owner }}/spotify-stat-server:${{ github.ref_name }}-${{ matrix.suffix }}
+
+  manifest:
+    needs: build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish multi-architecture manifests
+        env:
+          GHCR_OWNER: ${{ github.repository_owner }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          for component in client server; do
+            docker buildx imagetools create \
+              --tag "ghcr.io/${GHCR_OWNER}/spotify-stat-${component}:latest" \
+              "ghcr.io/${GHCR_OWNER}/spotify-stat-${component}:latest-amd64" \
+              "ghcr.io/${GHCR_OWNER}/spotify-stat-${component}:latest-arm64"
+            docker buildx imagetools create \
+              --tag "ghcr.io/${GHCR_OWNER}/spotify-stat-${component}:${RELEASE_TAG}" \
+              "ghcr.io/${GHCR_OWNER}/spotify-stat-${component}:${RELEASE_TAG}-amd64" \
+              "ghcr.io/${GHCR_OWNER}/spotify-stat-${component}:${RELEASE_TAG}-arm64"
+          done
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "${RELEASE_TAG}" --generate-notes --verify-tag

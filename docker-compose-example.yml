@@ -1,6 +1,6 @@
 services:
   server:
-    image: yooooomi/your_spotify_server
+    image: ghcr.io/noeulnight/spotify-stat-server
     restart: always
     ports:
       - "8080:8080"
@@ -11,18 +11,18 @@ services:
     environment:
       API_ENDPOINT: http://127.0.0.1:8080 # This MUST be included as a valid URL in the spotify dashboard
       CLIENT_ENDPOINT: http://127.0.0.1:3000
-      SPOTIFY_PUBLIC: __your_spotify_client_id__
-      SPOTIFY_SECRET: __your_spotify_secret__
+      SPOTIFY_PUBLIC: __spotify_client_id__
+      SPOTIFY_SECRET: __spotify_client_secret__
 
   mongo:
     container_name: mongo
     image: mongo:8
     restart: always
     volumes:
-      - ./your_spotify_db:/data/db
+      - ./spotify-stat-db:/data/db
 
   web:
-    image: yooooomi/your_spotify_client
+    image: ghcr.io/noeulnight/spotify-stat-client
     restart: always
     ports:
       - "3000:3000"

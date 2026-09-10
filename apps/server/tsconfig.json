@@ -1,4 +1,4 @@
 {
-  "extends": "@your_spotify/dev/tsconfig.json",
+  "extends": "@spotify-stat/dev/tsconfig.json",
   "compilerOptions": { "outDir": "lib" }
 }

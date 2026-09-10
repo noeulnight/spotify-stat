@@ -1,4 +1,4 @@
 #!/bin/sh
 
-cd client && docker build -f Dockerfile.production . -t yooooomi/your_spotify_client:latest ; cd -
-cd server && docker build -f Dockerfile.production . -t yooooomi/your_spotify_server:latest ; cd -
+docker build -f Dockerfile.client.production . -t noeulnight/spotify-stat-client:latest
+docker build -f Dockerfile.server.production . -t noeulnight/spotify-stat-server:latest

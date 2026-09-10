@@ -53,7 +53,7 @@ export function startServer() {
       const domain = get("CLIENT_ENDPOINT");
       if (domain.toLowerCase().includes("spotify")) {
         logger.warn(
-          "Spotify was detected in CLIENT_ENDPOINT, Google might mark your entire domain as deceptive. https://github.com/Yooooomi/your_spotify/pull/254",
+          "Spotify was detected in CLIENT_ENDPOINT; Google might mark your entire domain as deceptive.",
         );
       }
       dbLoop().catch(logger.error);

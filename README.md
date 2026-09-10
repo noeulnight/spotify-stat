@@ -1,5 +1,5 @@
-![Build CI](https://github.com/Yooooomi/your_spotify/workflows/Nightly%20build%20CI/badge.svg)
-![Release CI](https://github.com/Yooooomi/your_spotify/workflows/Release%20CI/badge.svg)
+![Build CI](https://github.com/noeulnight/spotify-stat/actions/workflows/nightly.yml/badge.svg)
+![Release CI](https://github.com/noeulnight/spotify-stat/actions/workflows/release.yml/badge.svg)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=BLAPT49PK9A8G)
 
 <p align='center'>
@@ -42,12 +42,12 @@ It's composed of a web server which polls the Spotify API every now and then and
 
 ## Using `docker-compose`
 
-Follow the [docker-compose-example.yml](https://github.com/Yooooomi/your_spotify/blob/master/docker-compose-example.yml) to host your application through docker.
+Follow the [docker-compose-example.yml](https://github.com/noeulnight/spotify-stat/blob/master/docker-compose-example.yml) to host your application through docker.
 
 ```yml
 services:
   server:
-    image: yooooomi/your_spotify_server
+    image: ghcr.io/noeulnight/spotify-stat-server
     restart: always
     ports:
       - "8080:8080"
@@ -58,11 +58,11 @@ services:
     environment:
       API_ENDPOINT: http://localhost:8080 # This MUST be included as a valid URL in the spotify dashboard (see below)
       CLIENT_ENDPOINT: http://localhost:3000
-      SPOTIFY_PUBLIC: __your_spotify_client_id__
-      SPOTIFY_SECRET: __your_spotify_secret__
+      SPOTIFY_PUBLIC: __spotify_client_id__
+      SPOTIFY_SECRET: __spotify_client_secret__
 
   web:
-    image: yooooomi/your_spotify_client
+    image: ghcr.io/noeulnight/spotify-stat-client
     restart: always
     ports:
       - "3000:3000"
@@ -73,13 +73,13 @@ services:
     container_name: mongo
     image: mongo:8
     volumes:
-      - ./your_spotify_db:/data/db
+      - ./spotify-stat-db:/data/db
 
 ```
 
 ## Installing locally (not recommended)
 
-You can follow the instructions [here](https://github.com/Yooooomi/your_spotify/blob/master/LOCAL_INSTALL.md). Note that you will still have to do the steps below.
+You can follow the instructions [here](https://github.com/noeulnight/spotify-stat/blob/master/LOCAL_INSTALL.md). Note that you will still have to do the steps below.
 
 ## Environment
 
@@ -90,14 +90,15 @@ You can follow the instructions [here](https://github.com/Yooooomi/your_spotify/
 | SPOTIFY_PUBLIC        | REQUIRED | The public key of your Spotify application (cf [Creating the Spotify Application](#creating-the-spotify-application)) |
 | SPOTIFY_SECRET        | REQUIRED | The secret key of your Spotify application (cf [Creating the Spotify Application](#creating-the-spotify-application)) |
 | TIMEZONE              | Europe/Paris | The timezone of your stats, only affects read requests since data is saved with UTC time |
-| MONGO_ENDPOINT        | mongodb://mongo:27017/your_spotify | The endpoint of the Mongo database, where **mongo** is the name of your service in the compose file |
-| PROMETHEUS_USERNAME             | _not defined_ | Prometheus basic auth username (see [here](https://github.com/Yooooomi/your_spotify/tree/master/apps/server#prometheus)) |
+| MONGO_ENDPOINT        | mongodb://mongo:27017/spotify-stat | The endpoint of the Mongo database, where **mongo** is the name of your service in the compose file |
+| PROMETHEUS_USERNAME             | _not defined_ | Prometheus basic auth username (see [here](https://github.com/noeulnight/spotify-stat/tree/master/apps/server#prometheus)) |
 | PROMETHEUS_PASSWORD             | _not defined_ | Prometheus basic auth password |
 | LOG_LEVEL             | info | The log level, debug is useful if you encouter any bugs |
 | CORS                  | _not defined_ | List of comma-separated origin allowed (not required; defaults to CLIENT_ENDPOINT) |
 | COOKIE_VALIDITY_MS    | 1h | Validity time of the authentication cookie, following [this pattern](https://github.com/vercel/ms) |
 | MAX_IMPORT_CACHE_SIZE | Infinite | The maximum element in the cache when importing data from an outside source, more cache means less requests to Spotify, resulting in faster imports |
 | MONGO_NO_ADMIN_RIGHTS | false | Do not ask for admin right on the Mongo database |
+| HOST                  | 0.0.0.0 | The address the server listens on |
 | PORT                  | 8080 | The port of the server, **do not** modify if you're using docker |
 | FRAME_ANCESTORS       | _not defined_ | Sites allowed to frame the website, comma separated list of URLs (`i-want-a-security-vulnerability-and-want-to-allow-all-frame-ancestors` to allow every website) |
 
@@ -117,7 +118,7 @@ To do so, you need to create a **Spotify application** [here](https://developer.
 1. Click on **Create app**.
 2. Fill out all the information.
 3. Set the redirect URI, corresponding to your **server** location on the internet (or your local network) adding the suffix **/oauth/spotify/callback** (**/api/oauth/spotify/callback** if using the [linuxserver](https://github.com/linuxserver/docker-your_spotify) image).
-- i.e: `http://localhost:8080/oauth/spotify/callback` or `http://home.mydomain.com/your_spotify_backend/oauth/spotify/callback`
+- i.e: `http://localhost:8080/oauth/spotify/callback` or `http://home.mydomain.com/spotify-stat-backend/oauth/spotify/callback`
 4. Check **Web API**
 5. Check **I understand and agree**
 6. Hit **Settings** at the top right corner
@@ -190,7 +191,7 @@ Any user can set his proper timezone in the settings, it will be used for any co
 
 # Contributing
 
-If you have any issue or any idea that could make the project better, feel free to open an [issue](https://github.com/Yooooomi/your_spotify/issues/new/choose). I'd love to hear about new ideas or bugs you are encountering.
+If you have any issue or any idea that could make the project better, feel free to open an [issue](https://github.com/noeulnight/spotify-stat/issues/new/choose). I'd love to hear about new ideas or bugs you are encountering.
 
 # Sponsoring
 

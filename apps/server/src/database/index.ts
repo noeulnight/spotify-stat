@@ -14,7 +14,7 @@ const TRIES = 10;
 const WAIT_MS = 30_000;
 
 export const connect = async () => {
-  const fallbackConnection = "mongodb://mongo:27017/your_spotify";
+  const fallbackConnection = "mongodb://mongo:27017/spotify-stat";
   const endpoint = getWithDefault("MONGO_ENDPOINT", fallbackConnection);
   logger.info(`Trying to connect to database at ${endpoint}`);
   let client: Mongoose | undefined;

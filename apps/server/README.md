@@ -3,6 +3,7 @@
 ## Table of Contents
 
 - [Prometheus](#prometheus)
+- [Statistics rollups](#statistics-rollups)
 - [API](#api)
   - [Authentication](#authentication)
     - [OAuth](#oauth)
@@ -28,7 +29,7 @@
 You can access various prometheus metrics through `/metrics`:
 
 - **http_requests_total**: Total number of HTTP requests
-- **http_request_duration_nanoseconds**: Duration of HTTP requests in nanoseconds
+- **http_request_duration_seconds**: Histogram of HTTP request duration in seconds
 - **imports_total**: Total number of imports
 - **ingested_tracks_total**: Total number of ingested tracks from Spotify API
 - **ingested_albums_total**: Total number of ingested albums from Spotify API
@@ -43,13 +44,32 @@ Those values are to be referenced in the configuration of your Prometheus instan
 
 ```yml
 scrape_configs:
-  - job_name: "your_spotify"
+  - job_name: "spotify-stat"
     basic_auth:
       username: "myuser" # PROMETHEUS_USERNAME
       password: "mypassword" # PROMETHEUS_PASSWORD
     static_configs:
       - targets: ["example.com:443"]
 ```
+
+## Statistics rollups
+
+The server maintains hourly summary and entity rollups whenever listening
+history is inserted. Statistics automatically fall back to the raw history
+while a user's rollups are missing, dirty, or being rebuilt.
+
+After deploying this version against an existing database, build the server and
+run the one-time backfill before relying on the faster statistics and indexed
+catalog search:
+
+```sh
+pnpm --filter @spotify-stat/server build
+pnpm --filter @spotify-stat/server stats:backfill
+```
+
+Run only one backfill process at a time. The command rebuilds each user's
+statistics and creates search-index documents without changing raw listening
+history.
 
 ## API
 
