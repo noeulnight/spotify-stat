@@ -1,5 +1,6 @@
 import InfiniteScroll from "react-infinite-scroll-component";
 import { useSelector } from "react-redux";
+
 import { GridWrapper } from "../../../components/Grid";
 import Header from "../../../components/Header";
 import Loader from "../../../components/Loader";
@@ -9,11 +10,12 @@ import { useInfiniteScroll } from "../../../services/hooks/scrolling";
 import { selectRawIntervalDetail } from "../../../services/redux/modules/user/selector";
 import Artist from "./Artist";
 import ArtistHeader from "./Artist/ArtistHeader";
+
 import s from "./index.module.css";
 
 export default function Artists() {
   const { interval } = useSelector(selectRawIntervalDetail);
-  const { items, hasMore, onNext } = useInfiniteScroll(
+  const { items, hasMore, isLoading, onNext } = useInfiniteScroll(
     interval,
     api.getBestArtists,
   );
@@ -30,7 +32,7 @@ export default function Artists() {
             next={onNext}
             hasMore={hasMore}
             dataLength={items.length}
-            loader={<Loader />}>
+            loader={isLoading ? <Loader /> : null}>
             <GridWrapper>
               <ArtistHeader />
               {items.map((item, rank) => (

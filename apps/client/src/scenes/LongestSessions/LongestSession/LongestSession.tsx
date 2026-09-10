@@ -2,6 +2,7 @@ import { ExpandMore } from "@mui/icons-material";
 import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import clsx from "clsx";
 import { useState } from "react";
+
 import ImageTwoLines from "../../../components/ImageTwoLines";
 import InlineArtist from "../../../components/InlineArtist";
 import InlineTrack from "../../../components/InlineTrack";
@@ -13,14 +14,17 @@ import {
 } from "../../../services/date";
 import { useLoadArtists } from "../../../services/hooks/artist";
 import { Track, TrackInfo } from "../../../services/types";
+
 import s from "./index.module.css";
 
 interface LongestSessionProps {
+  sessionLength: number;
   tracks: TrackInfo[];
   fullTracks: Record<string, Track>;
 }
 
 export default function LongestSession({
+  sessionLength,
   tracks,
   fullTracks,
 }: LongestSessionProps) {
@@ -33,17 +37,10 @@ export default function LongestSession({
   const { loaded, artists } = useLoadArtists(artistIds);
   const [expanded, setExpanded] = useState(false);
 
-  const totalDuration = (() => {
-    const first = tracks[0];
-    const last = tracks[tracks.length - 1];
-    if (!first || !last) {
-      return "";
-    }
-    return intervalToHoursAndMinutes(
-      new Date(first.played_at),
-      new Date(new Date(last.played_at).getTime() + last.durationMs),
-    );
-  })();
+  const totalDuration = intervalToHoursAndMinutes(
+    new Date(0),
+    new Date(sessionLength),
+  );
 
   const [firstTrack] = tracks;
 

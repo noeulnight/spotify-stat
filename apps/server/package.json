@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit",
     "dev": "concurrently \"rsbuild build -w\" \"nodemon build/index.js\"",
     "migrate": "node ./build/index.js --migrate",
+    "stats:backfill": "node ./build/index.js --backfill-stats",
     "lint": "oxlint -c ../dev/.oxlintrc.json . && oxfmt -c ../dev/.oxfmtrc.json --check .",
     "lint:fix": "oxlint -c ../dev/.oxlintrc.json --fix . && oxfmt -c ../dev/.oxfmtrc.json ."
   },

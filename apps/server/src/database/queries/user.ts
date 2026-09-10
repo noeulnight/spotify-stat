@@ -8,6 +8,11 @@ import {
   TrackModel,
   UserModel,
 } from "../Models";
+import {
+  markStatsRollupsDirty,
+  rebuildStatsRollups,
+  storeInfosWithRollups,
+} from "../rollups";
 import { Infos } from "../schemas/info";
 import { User } from "../schemas/user";
 
@@ -108,7 +113,7 @@ export const addTrackIdsToUser = async (
     ...info,
     owner: new Types.ObjectId(id),
   }));
-  const infosSaved = await InfosModel.create(realInfos);
+  const infosSaved = await storeInfosWithRollups(id, realInfos, infos);
   return UserModel.findByIdAndUpdate(id, {
     $push: { tracks: { $each: infosSaved.map((e) => e._id) } },
   });
@@ -143,7 +148,7 @@ export const getPossibleDuplicates = async (
 ) => {
   return InfosModel.aggregate([
     { $match: { owner: new Types.ObjectId(userId) } },
-    { $sort: { played_at: 1 } },
+    { $sort: { played_at: 1, _id: 1 } },
     { $skip: offset },
     { $limit: count },
     { $group: { _id: "$id", infos: { $push: "$$ROOT" } } },
@@ -221,12 +226,14 @@ export const getSongs = async (
       $match: {
         owner: new Types.ObjectId(userId),
         ...(inter
-          ? { played_at: { $gt: inter.start, $lt: inter.end } }
+          ? { played_at: { $gte: inter.start, $lt: inter.end } }
           : undefined),
         blacklistedBy: { $exists: 0 },
       },
     },
-    { $sort: { played_at: -1 } },
+    { $sort: { played_at: -1, _id: -1 } },
+    { $skip: offset },
+    { $limit: number },
     {
       $lookup: {
         from: "tracks",
@@ -236,8 +243,6 @@ export const getSongs = async (
       },
     },
     { $unwind: "$track" },
-    { $skip: offset },
-    { $limit: number },
     {
       $lookup: {
         from: "albums",
@@ -336,7 +341,7 @@ export const deleteAllOrphanTracks = async () => {
 
 export const getFirstInfo = async (userId: string) => {
   const infos = await InfosModel.find({ owner: userId })
-    .sort({ played_at: "asc" })
+    .sort({ played_at: "asc", _id: "asc" })
     .limit(1);
   return infos[0];
 };
@@ -359,7 +364,15 @@ export const unblacklistArtist = (userId: string, artistId: string) =>
     $pull: { "settings.blacklistedArtists": artistId },
   });
 
-export const deleteInfos = (infoIds: string[]) =>
-  InfosModel.deleteMany({
-    _id: { $in: infoIds.map((id) => new Types.ObjectId(id)) },
-  });
+export const deleteInfos = async (infoIds: string[]) => {
+  const ids = infoIds.map((id) => new Types.ObjectId(id));
+  const owners = await InfosModel.distinct("owner", { _id: { $in: ids } });
+  await Promise.all(
+    owners.map((owner) => markStatsRollupsDirty(owner.toString())),
+  );
+  const result = await InfosModel.deleteMany({ _id: { $in: ids } });
+  await Promise.all(
+    owners.map((owner) => rebuildStatsRollups(owner.toString())),
+  );
+  return result;
+};

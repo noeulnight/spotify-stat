@@ -26,6 +26,7 @@ import {
   getCollaborativeBestArtists,
   getCollaborativeBestSongs,
 } from "../database/queries/collaborative";
+import { HttpError } from "../tools/apis/queueHttpClient";
 import { DateFormatter, intervalToDisplay } from "../tools/date";
 import { logger } from "../tools/logger";
 import {
@@ -66,6 +67,53 @@ router.post("/play", logged, withHttpClient, async (req, res) => {
   }
 });
 
+router.get(
+  "/currently-playing",
+  isLoggedOrGuest,
+  withHttpClient,
+  async (req, res) => {
+    const { client } = req as SpotifyRequest;
+
+    try {
+      const playback = await client.currentlyPlaying();
+      if (!playback?.item || playback.currently_playing_type !== "track") {
+        res.status(200).json(null);
+        return;
+      }
+
+      const { item } = playback;
+      res
+        .status(200)
+        .send({
+          isPlaying: playback.is_playing,
+          progressMs: playback.progress_ms ?? 0,
+          fetchedAt: Date.now(),
+          track: {
+            id: item.id,
+            name: item.name,
+            uri: item.uri,
+            durationMs: item.duration_ms,
+          },
+          album: {
+            id: item.album.id,
+            name: item.album.name,
+            imageUrl: item.album.images[0]?.url ?? null,
+          },
+          artists: item.artists.map((artist) => ({
+            id: artist.id,
+            name: artist.name,
+          })),
+        });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        res.status(error.status).send({ code: "SPOTIFY_ERROR" });
+        return;
+      }
+      throw error;
+    }
+  },
+);
+
 const gethistorySchema = z.object({
   number: z.preprocess(toNumber, z.number().max(20)),
   offset: z.preprocess(toNumber, z.number()),
@@ -92,6 +140,10 @@ const interval = z.object({
     toDate,
     z.date().default(() => new Date()),
   ),
+});
+
+const longestSessionsSchema = interval.extend({
+  nb: z.preprocess(toNumber, z.number().int().min(1).max(100).default(30)),
 });
 
 const intervalPerSchema = z.object({
@@ -347,12 +399,13 @@ router.get(
 
 router.get("/top/sessions", isLoggedOrGuest, async (req, res) => {
   const { user } = req as LoggedRequest;
-  const { start, end } = validate(req.query, interval);
+  const { start, end, nb } = validate(req.query, longestSessionsSchema);
 
   const result = await getLongestListeningSession(
     user._id.toString(),
     start,
     end,
+    nb,
   );
   res.status(200).send(result);
 });

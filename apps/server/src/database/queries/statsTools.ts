@@ -14,7 +14,7 @@ export const basicMatch = (
       owner:
         userId instanceof Types.ObjectId ? userId : new Types.ObjectId(userId),
       blacklistedBy: { $exists: 0 },
-      played_at: { $gt: start, $lt: end },
+      played_at: { $gte: start, $lt: end },
     },
   },
 ];
@@ -31,7 +31,7 @@ export const basicMatchUsers = (
         : userIds.map((id) => new Types.ObjectId(id)),
   },
   blacklistedBy: { $exists: 0 },
-  played_at: { $gt: start, $lt: end },
+  played_at: { $gte: start, $lt: end },
 });
 
 export const getGroupingByTimeSplit = (timeSplit: Timesplit, prefix = "") => {
@@ -198,3 +198,41 @@ export const lightArtistLookupPipeline = (
   from: "artists",
   as: "artist",
 });
+
+export const bestArtistLookupStages = (collection: string): PipelineStage[] => {
+  if (collection !== "albums") {
+    const idField = collection === "artists" ? "_id" : "primaryArtistId";
+    return [
+      { $lookup: lightArtistLookupPipeline(idField, false) },
+      { $unwind: "$artist" },
+    ];
+  }
+
+  return [
+    {
+      $lookup: {
+        ...lightArtistLookupPipeline("album.artists"),
+        as: "albumArtist",
+      },
+    },
+    {
+      $lookup: {
+        ...lightArtistLookupPipeline("primaryArtistId", false),
+        as: "fallbackArtist",
+      },
+    },
+    {
+      $set: {
+        artist: {
+          $cond: [
+            { $gt: [{ $size: "$albumArtist" }, 0] },
+            "$albumArtist",
+            "$fallbackArtist",
+          ],
+        },
+      },
+    },
+    { $unset: ["albumArtist", "fallbackArtist"] },
+    { $unwind: "$artist" },
+  ];
+};

@@ -2,11 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { getArtists, getRankOf, ItemType } from "../database";
-import {
-  getAlbumSongs,
-  getAlbums,
-  getFirstAndLastListenedAlbum,
-} from "../database/queries/album";
+import { getAlbums, getAlbumStatsData } from "../database/queries/album";
 import { isLoggedOrGuest, validate } from "../tools/middleware";
 import { LoggedRequest } from "../tools/types";
 
@@ -34,14 +30,11 @@ router.get("/:id/stats", isLoggedOrGuest, async (req, res) => {
     res.status(404).end();
     return;
   }
-  const promises = [
-    getFirstAndLastListenedAlbum(user, id),
-    getAlbumSongs(user, id),
+  const [stats, artists] = await Promise.all([
+    getAlbumStatsData(user, id),
     getArtists(album.artists),
-    // getTotalListeningOfAlbum(user, id),
-  ];
-  const [firstLast, tracks, artists] = await Promise.all(promises);
-  res.status(200).send({ album, artists, firstLast, tracks });
+  ]);
+  res.status(200).send({ album, artists, ...stats });
 });
 
 router.get("/:id/rank", isLoggedOrGuest, async (req, res) => {

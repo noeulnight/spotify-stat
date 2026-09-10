@@ -5,9 +5,15 @@ import {
   storeInUser,
   storeFirstListenedAtIfLess,
 } from "../database";
-import { TrackModel, AlbumModel, ArtistModel } from "../database/Models";
+import {
+  TrackModel,
+  AlbumModel,
+  ArtistModel,
+  CatalogSearchModel,
+} from "../database/Models";
 import { Album } from "../database/schemas/album";
 import { Artist } from "../database/schemas/artist";
+import { CatalogSearchType } from "../database/schemas/catalogSearch";
 import { Infos } from "../database/schemas/info";
 import { SpotifyTrack, Track } from "../database/schemas/track";
 import { SpotifyAPI } from "../tools/apis/spotifyApi";
@@ -15,7 +21,29 @@ import { longWriteDbLock } from "../tools/lock";
 import { logger } from "../tools/logger";
 import { Metrics } from "../tools/metrics";
 import { minOfArray, uniqBy } from "../tools/misc";
+import { normalizeSearchText, searchNgrams } from "../tools/search";
 import { compact } from "../tools/utils";
+
+const storeCatalogSearchEntries = async (
+  type: CatalogSearchType,
+  items: { id: string; name: string }[],
+) => {
+  if (items.length === 0) return;
+  await CatalogSearchModel.bulkWrite(
+    items.map((item) => ({
+      updateOne: {
+        filter: { type, itemId: item.id },
+        update: {
+          $set: {
+            normalizedName: normalizeSearchText(item.name),
+            nameNgrams: searchNgrams(item.name),
+          },
+        },
+        upsert: true,
+      },
+    })),
+  );
+};
 
 export const getTracks = async (userId: string, ids: string[]) => {
   const client = new SpotifyAPI(userId);
@@ -136,13 +164,19 @@ export async function storeTrackAlbumArtist({
   artists?: Artist[];
 }) {
   if (tracks) {
-    await TrackModel.create(uniqBy(tracks, (item) => item.id));
+    const uniqueTracks = uniqBy(tracks, (item) => item.id);
+    await storeCatalogSearchEntries("track", uniqueTracks);
+    await TrackModel.create(uniqueTracks);
   }
   if (albums) {
-    await AlbumModel.create(uniqBy(albums, (item) => item.id));
+    const uniqueAlbums = uniqBy(albums, (item) => item.id);
+    await storeCatalogSearchEntries("album", uniqueAlbums);
+    await AlbumModel.create(uniqueAlbums);
   }
   if (artists) {
-    await ArtistModel.create(uniqBy(artists, (item) => item.id));
+    const uniqueArtists = uniqBy(artists, (item) => item.id);
+    await storeCatalogSearchEntries("artist", uniqueArtists);
+    await ArtistModel.create(uniqueArtists);
   }
 }
 

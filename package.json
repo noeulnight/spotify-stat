@@ -1,7 +1,9 @@
 {
   "name": "@your_spotify/root",
   "version": "1.20.1",
-  "repository": "git@github.com:Yooooomi/your_spotify.git",
-  "author": "Timothee <timothee.boussus@gmail.com>",
+  "repository": "git@github.com:noeulnight/spotify-stat.git",
+  "author": "Taehyun Lim <me@lth.so>",
+  "contributors": ["Timothee <timothee.boussus@gmail.com>"],
+  "license": "GPL-3.0-only",
   "private": true
 }

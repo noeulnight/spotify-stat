@@ -1,15 +1,18 @@
 import { Timesplit } from "../../tools/types";
 import { InfosModel, TrackModel } from "../Models";
 import { User } from "../schemas/user";
+import { searchCatalogIds } from "./catalogSearch";
 import { getGroupByDateProjection, getGroupingByTimeSplit } from "./statsTools";
 
 export const getTracks = (tracksId: string[]) =>
   TrackModel.find({ id: { $in: tracksId } });
 
-export const searchTrack = (str: string) =>
-  TrackModel.find({ name: { $regex: new RegExp(str, "i") } })
+export const searchTrack = async (str: string, limit = 20) => {
+  const ids = await searchCatalogIds("track", str, limit);
+  return TrackModel.find({ id: { $in: ids } })
     .populate("full_album")
     .populate("full_artists");
+};
 
 export const getTrackListenedCount = (user: User, trackId: string) =>
   InfosModel.where({ owner: user._id, id: trackId }).countDocuments();
@@ -20,7 +23,7 @@ export const getTrackFirstAndLastListened = async (
 ) => {
   const res = await InfosModel.aggregate([
     { $match: { owner: user._id, id: trackId } },
-    { $sort: { played_at: 1 } },
+    { $sort: { played_at: 1, _id: 1 } },
     {
       $group: {
         _id: null,
@@ -49,7 +52,7 @@ export const bestPeriodOfTrack = async (user: User, trackId: string) => {
         total: { $last: "$total" },
       },
     },
-    { $sort: { count: -1 } },
+    { $sort: { count: -1, "_id.year": 1, "_id.month": 1 } },
     { $limit: 2 },
   ]);
   return res;
@@ -59,7 +62,7 @@ export const getTrackRecentHistory = async (user: User, trackId: string) =>
   InfosModel.find()
     .where({ owner: user._id, id: trackId })
     .limit(10)
-    .sort({ played_at: -1 });
+    .sort({ played_at: -1, _id: -1 });
 
 export const getTrackBySpotifyId = (id: string) => TrackModel.findOne({ id });
 

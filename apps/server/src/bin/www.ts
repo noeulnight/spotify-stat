@@ -8,6 +8,7 @@ import { get, getWithDefault } from "../tools/env";
 import { logger } from "../tools/logger";
 
 export function startServer() {
+  const host = getWithDefault("HOST", "0.0.0.0");
   const port = getWithDefault("PORT", 8080);
   app.set("port", port);
 
@@ -44,7 +45,7 @@ export function startServer() {
 
   connect()
     .then(async () => {
-      server.listen(port);
+      server.listen(port, host);
       server.on("error", onError);
       server.on("listening", onListening);
       fixRunningImportsAtStart().catch(logger.error);

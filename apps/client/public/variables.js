@@ -1,1 +1,1 @@
-window.API_ENDPOINT = "http://127.0.0.1:8080";
+window.API_ENDPOINT = "http://100.64.1.1:8080";

@@ -221,13 +221,15 @@ export const measureRequestDuration = (
   if (!MEASURE_METHODS.includes(req.method)) {
     return next();
   }
-  const endpoint = req.path;
   const start = hrtime.bigint();
   res.on("finish", () => {
-    const duration = Number(hrtime.bigint() - start);
-    Metrics.httpRequestDurationNanoseconds
+    const durationSeconds = Number(hrtime.bigint() - start) / 1_000_000_000;
+    const endpoint = req.route?.path
+      ? `${req.baseUrl}${req.route.path}`
+      : "unmatched";
+    Metrics.httpRequestDurationSeconds
       .labels(req.method, endpoint, res.statusCode.toString())
-      .set(duration);
+      .observe(durationSeconds);
     Metrics.httpRequestsTotal
       .labels(req.method, endpoint, res.statusCode.toString())
       .inc();

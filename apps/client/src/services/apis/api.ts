@@ -1,4 +1,5 @@
 import Axios from "axios";
+
 import { AdminAccount } from "../redux/modules/admin/reducer";
 import { ImporterState } from "../redux/modules/import/types";
 import { Playlist, PlaylistContext } from "../redux/modules/playlist/types";
@@ -138,6 +139,15 @@ export type AlbumStatsResponse = {
   total: { count: number };
 };
 
+export interface CurrentlyPlayingResponse {
+  isPlaying: boolean;
+  progressMs: number;
+  fetchedAt: number;
+  track: { id: string; name: string; uri: string; durationMs: number };
+  album: { id: string; name: string; imageUrl: string | null };
+  artists: { id: string; name: string }[];
+}
+
 export const api = {
   publicToken: null as string | null,
 
@@ -155,6 +165,8 @@ export const api = {
   setGlobalPreferences: (preferences: Partial<GlobalPreferences>) =>
     post<GlobalPreferences>("/global/preferences", preferences),
   play: (id: string) => axios.post("/spotify/play", { id }),
+  currentlyPlaying: () =>
+    get<CurrentlyPlayingResponse | null>("/spotify/currently-playing"),
   getTracks: (start: Date, end: Date, number: number, offset: number) =>
     get<TrackInfoWithFullArtistAlbum[]>("/spotify/gethistory", {
       number,
@@ -211,14 +223,10 @@ export const api = {
       { start, end, timeSplit },
     ),
   differentArtistsPer: (start: Date, end: Date, timeSplit: Timesplit) =>
-    get<
-      {
-        artists: Artist[];
-        counts: number[];
-        differents: number;
-        _id: DateId | null;
-      }[]
-    >("/spotify/different_artists_per", { start, end, timeSplit }),
+    get<{ differents: number; _id: DateId | null }[]>(
+      "/spotify/different_artists_per",
+      { start, end, timeSplit },
+    ),
   setSetting: (settingName: keyof User["settings"], settingValue: any) =>
     axios.post("/settings", { [settingName]: settingValue }),
   timePerHourOfDay: (start: Date, end: Date) =>
@@ -393,14 +401,16 @@ export const api = {
   blacklistArtist: (artistId: string) => post(`/artist/blacklist/${artistId}`),
   unblacklistArtist: (artistId: string) =>
     post(`/artist/unblacklist/${artistId}`),
-  getLongestSessions: (start: Date, end: Date) =>
+  getLongestSessions: (start: Date, end: Date, nb = 30) =>
     get<
       {
         sessionLength: number;
+        startedAt: string;
+        endedAt: string;
         full_tracks: Record<string, Track>;
         distanceToLast: { distance: { subtract: number; info: TrackInfo }[] };
       }[]
-    >("/spotify/top/sessions", { start, end }),
+    >("/spotify/top/sessions", { start, end, nb }),
 };
 
 export const DEFAULT_ITEMS_TO_LOAD = 20;

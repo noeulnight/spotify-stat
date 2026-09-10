@@ -12,8 +12,13 @@ import {
   setUserPublicToken,
   storeInUser,
 } from "../database";
+import {
+  markStatsRollupsDirty,
+  rebuildStatsRollups,
+} from "../database/rollups";
 import { GithubAPI } from "../tools/apis/githubApi";
 import { getWithDefault } from "../tools/env";
+import { logger } from "../tools/logger";
 import {
   admin,
   isLoggedOrGuest,
@@ -63,6 +68,13 @@ router.post("/settings", logged, async (req, res) => {
   const payload = validate(req.body, settingsSchema);
 
   await changeSetting("_id", user._id, payload);
+  if (
+    payload.timezone !== undefined &&
+    payload.timezone !== user.settings.timezone
+  ) {
+    await markStatsRollupsDirty(user._id.toString());
+    rebuildStatsRollups(user._id.toString()).catch(logger.error);
+  }
   res.status(200).end();
 });
 

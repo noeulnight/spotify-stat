@@ -1,5 +1,6 @@
 import { Grid } from "@mui/material";
 import { useSelector } from "react-redux";
+
 import Header from "../../components/Header";
 import History from "../../components/History";
 import ArtistsListened from "../../components/ImplementedCards/ArtistsListened";
@@ -9,7 +10,9 @@ import SongsListened from "../../components/ImplementedCards/SongsListened";
 import TimeListened from "../../components/ImplementedCards/TimeListened";
 import ListeningRepartition from "../../components/ImplementedCharts/ListeningRepartition";
 import TimeListenedPer from "../../components/ImplementedCharts/TimeListenedPer";
+import NowPlaying from "../../components/NowPlaying";
 import { selectUser } from "../../services/redux/modules/user/selector";
+
 import s from "./index.module.css";
 
 export default function Home() {
@@ -28,6 +31,9 @@ export default function Home() {
       />
       <div className={s.content}>
         <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
+          <Grid size={{ xs: 12 }}>
+            <NowPlaying />
+          </Grid>
           <Grid size={{ xs: 12, md: 12, lg: 4 }}>
             <SongsListened />
           </Grid>

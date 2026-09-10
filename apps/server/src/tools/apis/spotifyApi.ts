@@ -14,6 +14,14 @@ export interface SpotifyMe {
   display_name: string;
 }
 
+export interface SpotifyCurrentlyPlaying {
+  timestamp: number;
+  progress_ms: number | null;
+  is_playing: boolean;
+  currently_playing_type: string;
+  item: SpotifyTrack | null;
+}
+
 interface SpotifyPlaylist {
   id: string;
   name: string;
@@ -69,6 +77,15 @@ export class SpotifyAPI {
     const client = await this.checkToken();
     const res = await client.get("/me", { priority: "high" });
     return res.data as SpotifyMe;
+  }
+
+  public async currentlyPlaying() {
+    const client = await this.checkToken();
+    const res = await client.get<SpotifyCurrentlyPlaying>(
+      "/me/player/currently-playing",
+      { priority: "high" },
+    );
+    return res.data ?? null;
   }
 
   public async playlists() {

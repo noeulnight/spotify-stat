@@ -1,4 +1,4 @@
-import { Gauge, Counter, collectDefaultMetrics } from "prom-client";
+import { Counter, Histogram, collectDefaultMetrics } from "prom-client";
 
 export class Metrics {
   static httpRequestsTotal = new Counter({
@@ -7,10 +7,11 @@ export class Metrics {
     labelNames: ["method", "endpoint", "status"] as const,
   });
 
-  static httpRequestDurationNanoseconds = new Gauge({
-    name: "http_request_duration_nanoseconds",
-    help: "Duration of HTTP requests in nanoseconds",
+  static httpRequestDurationSeconds = new Histogram({
+    name: "http_request_duration_seconds",
+    help: "Duration of HTTP requests in seconds",
     labelNames: ["method", "endpoint", "status"] as const,
+    buckets: [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
   });
 
   static importsTotal = new Counter({

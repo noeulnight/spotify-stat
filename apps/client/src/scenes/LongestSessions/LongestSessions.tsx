@@ -1,17 +1,26 @@
 import { useSelector } from "react-redux";
+
 import Header from "../../components/Header";
+import Loader from "../../components/Loader";
+import Text from "../../components/Text";
+import TitleCard from "../../components/TitleCard";
 import { api } from "../../services/apis/api";
 import { useAPI } from "../../services/hooks/hooks";
 import { selectRawIntervalDetail } from "../../services/redux/modules/user/selector";
-import Text from "../../components/Text";
-import TitleCard from "../../components/TitleCard";
-import Loader from "../../components/Loader";
-import s from "./index.module.css";
 import LongestSession from "./LongestSession/LongestSession";
+
+import s from "./index.module.css";
+
+const LONGEST_SESSIONS_LIMIT = 30;
 
 export default function LongestSessions() {
   const { interval } = useSelector(selectRawIntervalDetail);
-  const result = useAPI(api.getLongestSessions, interval.start, interval.end);
+  const result = useAPI(
+    api.getLongestSessions,
+    interval.start,
+    interval.end,
+    LONGEST_SESSIONS_LIMIT,
+  );
 
   const validResults = result?.filter(
     (res) => res.distanceToLast.distance.length >= 1,
@@ -23,7 +32,7 @@ export default function LongestSessions() {
     <div>
       <Header
         title="Longest sessions"
-        subtitle="You can find here the 5 longest listening sessions you have been through"
+        subtitle="You can find here the 30 longest listening sessions you have been through"
       />
       <div className={s.content}>
         {!result && (
@@ -36,10 +45,11 @@ export default function LongestSessions() {
           <Text size="normal">No longest session</Text>
         )}
         {hasValidSessions && (
-          <TitleCard title="5 longest sessions">
+          <TitleCard title="30 longest sessions">
             {validResults.map((r) => (
               <LongestSession
                 key={r.distanceToLast.distance.map((e) => e.info._id).join(",")}
+                sessionLength={r.sessionLength}
                 tracks={r.distanceToLast.distance.map((e) => e.info)}
                 fullTracks={r.full_tracks}
               />

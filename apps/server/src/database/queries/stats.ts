@@ -2,13 +2,24 @@ import { Timesplit } from "../../tools/types";
 import { InfosModel } from "../Models";
 import { User } from "../schemas/user";
 import {
+  getRollupAlbumDateRatio,
+  getRollupBest,
+  getRollupBestOfHour,
+  getRollupDayRepartition,
+  getRollupDifferentArtistsPer,
+  getRollupFeatRatio,
+  getRollupMostListenedArtist,
+  getRollupSongsPer,
+  getRollupTimePer,
+} from "./rollupStats";
+import {
   basicMatch,
+  bestArtistLookupStages,
   getGroupByDateProjection,
   getGroupingByTimeSplit,
   getTrackSortType,
   getTrackSumType,
   lightAlbumLookupPipeline,
-  lightArtistLookupPipeline,
   lightTrackLookupPipeline,
   sortByTimeSplit,
 } from "./statsTools";
@@ -91,6 +102,8 @@ export const getMostListenedArtist = async (
   end: Date,
   timeSplit = Timesplit.hour,
 ) => {
+  const rollup = await getRollupMostListenedArtist(user, start, end, timeSplit);
+  if (rollup) return rollup;
   const res = await InfosModel.aggregate([
     ...basicMatch(user._id, start, end),
     {
@@ -132,6 +145,7 @@ export const getMostListenedArtist = async (
         localField: "artists",
         foreignField: "id",
         as: "artists",
+        pipeline: [{ $project: { _id: 1, id: 1, name: 1 } }],
       },
     },
     { $unwind: "$artists" },
@@ -153,6 +167,8 @@ export const getSongsPer = async (
   end: Date,
   timeSplit = Timesplit.day,
 ) => {
+  const rollup = await getRollupSongsPer(user, start, end, timeSplit);
+  if (rollup) return rollup;
   const res = await InfosModel.aggregate([
     ...basicMatch(user._id, start, end),
     {
@@ -184,6 +200,8 @@ export const getTimePer = async (
   end: Date,
   timeSplit = Timesplit.day,
 ) => {
+  const rollup = await getRollupTimePer(user, start, end, timeSplit);
+  if (rollup) return rollup;
   const res = await InfosModel.aggregate([
     ...basicMatch(user._id, start, end),
     {
@@ -210,6 +228,8 @@ export const albumDateRatio = async (
   end: Date,
   timeSplit = Timesplit.day,
 ) => {
+  const rollup = await getRollupAlbumDateRatio(user, start, end, timeSplit);
+  if (rollup) return rollup;
   // infos already carries `albumId`, so the per-play `tracks` lookup is
   // unnecessary. Group by (timeBucket, albumId) first to collapse repeat
   // plays into a single row, then look the album up once per unique row.
@@ -273,6 +293,8 @@ export const featRatio = async (
   end: Date,
   timeSplit: Timesplit,
 ) => {
+  const rollup = await getRollupFeatRatio(user, start, end, timeSplit);
+  if (rollup) return rollup;
   // infos already carries `artistIds`, so the per-play `tracks` lookup is
   // unnecessary — compute the artist count from the denormalized field.
   const res = await InfosModel.aggregate([
@@ -339,6 +361,13 @@ export const differentArtistsPer = async (
   end: Date,
   timeSplit = Timesplit.day,
 ) => {
+  const rollup = await getRollupDifferentArtistsPer(
+    user,
+    start,
+    end,
+    timeSplit,
+  );
+  if (rollup) return rollup;
   const res = await InfosModel.aggregate([
     ...basicMatch(user._id, start, end),
     {
@@ -355,25 +384,12 @@ export const differentArtistsPer = async (
           ...getGroupingByTimeSplit(timeSplit),
           artistId: `$primaryArtistId`,
         },
-        count: { $sum: 1 },
       },
     },
-    { $sort: { count: -1, "_id.artistId": 1 } },
-    {
-      $lookup: {
-        from: "artists",
-        localField: "_id.artistId",
-        foreignField: "id",
-        as: "artist",
-      },
-    },
-    { $unwind: "$artist" },
     {
       $group: {
         _id: getGroupingByTimeSplit(timeSplit, "_id"),
-        artists: { $push: "$artist" },
         differents: { $sum: 1 },
-        counts: { $push: "$count" },
       },
     },
     ...sortByTimeSplit(timeSplit, "_id"),
@@ -383,6 +399,8 @@ export const differentArtistsPer = async (
 };
 
 export const getDayRepartition = async (user: User, start: Date, end: Date) => {
+  const rollup = await getRollupDayRepartition(user, start, end);
+  if (rollup) return rollup;
   const res = await InfosModel.aggregate([
     ...basicMatch(user._id, start, end),
     {
@@ -463,15 +481,24 @@ export const getBestArtistsPer = async (
   return res;
 };
 
-export const getBest = (
+export const getBest = async (
   itemType: ItemType,
   user: User,
   start: Date,
   end: Date,
   nb: number,
   offset: number,
-) =>
-  InfosModel.aggregate([
+) => {
+  const rollup = await getRollupBest(
+    itemType.collection,
+    user,
+    start,
+    end,
+    nb,
+    offset,
+  );
+  if (rollup) return rollup;
+  return InfosModel.aggregate([
     ...basicMatch(user._id, start, end),
     {
       $group: {
@@ -520,9 +547,9 @@ export const getBest = (
     { $unwind: "$track" },
     { $lookup: lightAlbumLookupPipeline("albumId") },
     { $unwind: "$album" },
-    { $lookup: lightArtistLookupPipeline("primaryArtistId", false) },
-    { $unwind: "$artist" },
+    ...bestArtistLookupStages(itemType.collection),
   ]);
+};
 
 export const getBestOfHour = async (
   itemType: ItemType,
@@ -530,42 +557,51 @@ export const getBestOfHour = async (
   start: Date,
   end: Date,
 ) => {
-  const bestOfHour = await InfosModel.aggregate([
-    ...basicMatch(user._id, start, end),
-    {
-      $group: {
-        _id: {
-          hour: getGroupByDateProjection(user.settings.timezone).hour,
-          itemId: itemType.field,
+  const rollup = await getRollupBestOfHour(
+    itemType.collection,
+    user,
+    start,
+    end,
+  );
+  const bestOfHour =
+    rollup ??
+    (await InfosModel.aggregate([
+      ...basicMatch(user._id, start, end),
+      {
+        $group: {
+          _id: {
+            hour: getGroupByDateProjection(user.settings.timezone).hour,
+            itemId: itemType.field,
+          },
+          total: { $sum: 1 },
         },
-        total: { $sum: 1 },
       },
-    },
-    { $sort: { total: -1 } },
-    {
-      $group: {
-        _id: "$_id.hour",
-        items: { $push: { itemId: "$_id.itemId", total: "$total" } },
-        total: { $sum: "$total" },
+      { $sort: { total: -1, "_id.itemId": 1 } },
+      {
+        $group: {
+          _id: "$_id.hour",
+          items: { $push: { itemId: "$_id.itemId", total: "$total" } },
+          total: { $sum: "$total" },
+        },
       },
-    },
-    {
-      $project: {
-        hour: "$_id",
-        total: "$total",
-        items: { $slice: ["$items", 20] },
+      {
+        $project: {
+          hour: "$_id",
+          total: "$total",
+          items: { $slice: ["$items", 20] },
+        },
       },
-    },
-    {
-      $lookup: {
-        from: itemType.collection,
-        localField: "items.itemId",
-        foreignField: "id",
-        as: "full_items",
+      {
+        $lookup: {
+          from: itemType.collection,
+          localField: "items.itemId",
+          foreignField: "id",
+          as: "full_items",
+          pipeline: [{ $project: { _id: 0, id: 1, name: 1 } }],
+        },
       },
-    },
-    { $sort: { _id: 1 } },
-  ]);
+      { $sort: { _id: 1 } },
+    ]));
   bestOfHour.forEach((hour: any) => {
     hour.full_items = Object.fromEntries(
       hour.full_items.map((e: any) => [e.id, e]),
@@ -578,6 +614,7 @@ export const getLongestListeningSession = async (
   userId: string,
   start: Date,
   end: Date,
+  limit = 30,
 ) => {
   const sessionBreakThreshold = 10 * 60 * 1000;
 
@@ -588,11 +625,11 @@ export const getLongestListeningSession = async (
   // number of plays.
   const longestSessions = await InfosModel.aggregate([
     ...basicMatch(userId, start, end),
-    { $sort: { played_at: 1 } },
+    { $sort: { played_at: 1, _id: 1 } },
     {
       $setWindowFields: {
         partitionBy: "$owner",
-        sortBy: { played_at: 1 },
+        sortBy: { played_at: 1, _id: 1 },
         output: {
           _prevPlayedAt: { $shift: { output: "$played_at", by: -1 } },
           _prevDurationMs: { $shift: { output: "$durationMs", by: -1 } },
@@ -618,7 +655,7 @@ export const getLongestListeningSession = async (
     {
       $setWindowFields: {
         partitionBy: "$owner",
-        sortBy: { played_at: 1 },
+        sortBy: { played_at: 1, _id: 1 },
         output: {
           _sessionId: {
             $sum: {
@@ -649,20 +686,22 @@ export const getLongestListeningSession = async (
           },
         },
         firstPlayedAt: { $min: "$played_at" },
-        lastPlayedAt: { $max: "$played_at" },
+        lastPlaybackEnd: { $max: { $add: ["$played_at", "$durationMs"] } },
       },
     },
     {
       $addFields: {
-        sessionLength: { $subtract: ["$lastPlayedAt", "$firstPlayedAt"] },
+        sessionLength: { $subtract: ["$lastPlaybackEnd", "$firstPlayedAt"] },
       },
     },
-    { $sort: { sessionLength: -1 } },
-    { $limit: 5 },
+    { $sort: { sessionLength: -1, "_id.sessionId": 1 } },
+    { $limit: limit },
     {
       $project: {
         _id: "$_id.owner",
         sessionLength: 1,
+        startedAt: "$firstPlayedAt",
+        endedAt: "$lastPlaybackEnd",
         distanceToLast: { distance: "$distance" },
       },
     },

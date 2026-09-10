@@ -1,13 +1,16 @@
 import { Timesplit } from "../../tools/types";
 import { ArtistModel, InfosModel } from "../Models";
 import { User } from "../schemas/user";
+import { searchCatalogIds } from "./catalogSearch";
 import { getGroupByDateProjection, getGroupingByTimeSplit } from "./statsTools";
 
 export const getArtists = (artistIds: string[]) =>
   ArtistModel.find({ id: { $in: artistIds } });
 
-export const searchArtist = (str: string) =>
-  ArtistModel.find({ name: { $regex: new RegExp(str, "i") } });
+export const searchArtist = async (str: string, limit = 20) => {
+  const ids = await searchCatalogIds("artist", str, limit);
+  return ArtistModel.find({ id: { $in: ids } });
+};
 
 export const getArtistInfos = (artistId: string) => [
   {
@@ -39,7 +42,7 @@ export const getFirstAndLastListened = async (user: User, artistId: string) => {
   const res = await InfosModel.aggregate([
     { $match: { owner: user._id, primaryArtistId: artistId } },
     ...getArtistInfos(artistId),
-    { $sort: { played_at: 1 } },
+    { $sort: { played_at: 1, _id: 1 } },
     {
       $group: {
         _id: null,
@@ -83,7 +86,7 @@ export const getMostListenedSongOfArtist = async (
     { $match: { owner: user._id, primaryArtistId: artistId } },
     ...getArtistInfos(artistId),
     { $group: { _id: "$id", count: { $sum: 1 } } },
-    { $sort: { count: -1 } },
+    { $sort: { count: -1, _id: 1 } },
     { $limit: count },
     {
       $lookup: {
@@ -130,7 +133,7 @@ export const bestPeriodOfArtist = async (user: User, artistId: string) => {
         total: { $last: "$total" },
       },
     },
-    { $sort: { count: -1 } },
+    { $sort: { count: -1, "_id.year": 1, "_id.month": 1 } },
     { $limit: 2 },
   ]);
   return res;
@@ -174,7 +177,7 @@ export const getMostListenedAlbumOfArtist = async (
       },
     },
     { $group: { _id: "$track.album", count: { $sum: 1 } } },
-    { $sort: { count: -1 } },
+    { $sort: { count: -1, _id: 1 } },
     {
       $lookup: {
         from: "albums",
@@ -213,3 +216,131 @@ export const getDayRepartitionOfArtist = (user: User, artistId: string) =>
     },
     { $sort: { _id: 1 } },
   ]);
+
+export const getArtistStatsData = async (user: User, artistId: string) => {
+  const [result] = await InfosModel.aggregate([
+    { $match: { owner: user._id, primaryArtistId: artistId } },
+    {
+      $facet: {
+        firstLast: [
+          { $sort: { played_at: 1, _id: 1 } },
+          {
+            $group: {
+              _id: null,
+              first: { $first: "$$ROOT" },
+              last: { $last: "$$ROOT" },
+            },
+          },
+          ...["first", "last"].flatMap((field) => [
+            {
+              $lookup: {
+                from: "tracks",
+                localField: `${field}.id`,
+                foreignField: "id",
+                as: `${field}.track`,
+              },
+            },
+            { $unwind: `$${field}.track` },
+            {
+              $lookup: {
+                from: "albums",
+                localField: `${field}.track.album`,
+                foreignField: "id",
+                as: `${field}.track.album`,
+              },
+            },
+            { $unwind: `$${field}.track.album` },
+          ]),
+        ],
+        mostListened: [
+          { $group: { _id: "$id", count: { $sum: 1 } } },
+          { $sort: { count: -1, _id: 1 } },
+          { $limit: 10 },
+          {
+            $lookup: {
+              from: "tracks",
+              localField: "_id",
+              foreignField: "id",
+              as: "track",
+            },
+          },
+          { $unwind: "$track" },
+          {
+            $lookup: {
+              from: "albums",
+              localField: "track.album",
+              foreignField: "id",
+              as: "track.album",
+            },
+          },
+          { $unwind: "$track.album" },
+        ],
+        albumMostListened: [
+          { $group: { _id: "$albumId", count: { $sum: 1 } } },
+          { $sort: { count: -1, _id: 1 } },
+          { $limit: 10 },
+          {
+            $lookup: {
+              from: "albums",
+              localField: "_id",
+              foreignField: "id",
+              as: "album",
+            },
+          },
+          { $unwind: "$album" },
+        ],
+        bestPeriod: [
+          { $project: getGroupByDateProjection(user.settings.timezone) },
+          {
+            $group: {
+              _id: getGroupingByTimeSplit(Timesplit.month),
+              count: { $sum: 1 },
+            },
+          },
+          { $setWindowFields: { output: { total: { $sum: "$count" } } } },
+          { $sort: { count: -1, "_id.year": 1, "_id.month": 1 } },
+          { $limit: 2 },
+        ],
+        total: [
+          {
+            $group: {
+              _id: null,
+              count: { $sum: 1 },
+              trackIds: { $addToSet: "$id" },
+            },
+          },
+          {
+            $project: { _id: 1, count: 1, differents: { $size: "$trackIds" } },
+          },
+        ],
+        dayRepartition: [
+          {
+            $project: {
+              hour: getGroupByDateProjection(user.settings.timezone).hour,
+              durationMs: 1,
+            },
+          },
+          {
+            $group: {
+              _id: "$hour",
+              count: { $sum: 1 },
+              duration: { $sum: "$durationMs" },
+            },
+          },
+          { $sort: { _id: 1 } },
+        ],
+      },
+    },
+    {
+      $project: {
+        firstLast: { $arrayElemAt: ["$firstLast", 0] },
+        mostListened: 1,
+        albumMostListened: 1,
+        bestPeriod: 1,
+        total: { $arrayElemAt: ["$total", 0] },
+        dayRepartition: 1,
+      },
+    },
+  ]);
+  return result;
+};

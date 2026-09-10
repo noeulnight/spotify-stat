@@ -1,13 +1,14 @@
 import { AlbumModel, InfosModel } from "../Models";
 import { User } from "../schemas/user";
+import { searchCatalogIds } from "./catalogSearch";
 
 export const getAlbums = (albumsId: string[]) =>
   AlbumModel.find({ id: { $in: albumsId } });
 
-export const searchAlbum = (str: string) =>
-  AlbumModel.find({ name: { $regex: new RegExp(str, "i") } }).populate(
-    "full_artists",
-  );
+export const searchAlbum = async (str: string, limit = 20) => {
+  const ids = await searchCatalogIds("album", str, limit);
+  return AlbumModel.find({ id: { $in: ids } }).populate("full_artists");
+};
 
 export const getAlbumInfos = (albumId: string) => [
   {
@@ -41,7 +42,7 @@ export const getFirstAndLastListenedAlbum = async (
   const res = await InfosModel.aggregate([
     { $match: { owner: user._id, albumId: albumId } },
     ...getAlbumInfos(albumId),
-    { $sort: { played_at: 1 } },
+    { $sort: { played_at: 1, _id: 1 } },
     {
       $group: {
         _id: null,
@@ -71,7 +72,7 @@ export const getAlbumSongs = async (user: User, albumId: string) => {
     { $match: { owner: user._id, albumId: albumId } },
     ...getAlbumInfos(albumId),
     { $group: { _id: "$id", count: { $sum: 1 } } },
-    { $sort: { count: -1 } },
+    { $sort: { count: -1, _id: 1 } },
     {
       $lookup: {
         from: "tracks",
@@ -83,4 +84,50 @@ export const getAlbumSongs = async (user: User, albumId: string) => {
     { $unwind: "$track" },
   ]);
   return res;
+};
+
+export const getAlbumStatsData = async (user: User, albumId: string) => {
+  const [result] = await InfosModel.aggregate([
+    { $match: { owner: user._id, albumId } },
+    {
+      $facet: {
+        firstLast: [
+          { $sort: { played_at: 1, _id: 1 } },
+          {
+            $group: {
+              _id: null,
+              first: { $first: "$$ROOT" },
+              last: { $last: "$$ROOT" },
+            },
+          },
+          ...["first", "last"].flatMap((field) => [
+            {
+              $lookup: {
+                from: "tracks",
+                localField: `${field}.id`,
+                foreignField: "id",
+                as: `${field}.track`,
+              },
+            },
+            { $unwind: `$${field}.track` },
+          ]),
+        ],
+        tracks: [
+          { $group: { _id: "$id", count: { $sum: 1 } } },
+          { $sort: { count: -1, _id: 1 } },
+          {
+            $lookup: {
+              from: "tracks",
+              localField: "_id",
+              foreignField: "id",
+              as: "track",
+            },
+          },
+          { $unwind: "$track" },
+        ],
+      },
+    },
+    { $project: { firstLast: { $arrayElemAt: ["$firstLast", 0] }, tracks: 1 } },
+  ]);
+  return result;
 };

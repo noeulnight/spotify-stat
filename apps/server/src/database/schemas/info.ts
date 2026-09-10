@@ -33,6 +33,14 @@ export const InfosSchema = new Schema<Infos>(
   { toJSON: { virtuals: true }, toObject: { virtuals: true } },
 );
 
+InfosSchema.index(
+  { owner: 1, blacklistedBy: 1, played_at: -1 },
+  { name: "owner_blacklistedBy_played_at" },
+);
+InfosSchema.index({ owner: 1, id: 1, played_at: -1 });
+InfosSchema.index({ owner: 1, primaryArtistId: 1, played_at: 1 });
+InfosSchema.index({ owner: 1, albumId: 1, played_at: 1 });
+
 InfosSchema.virtual("track", {
   ref: "Track",
   localField: "id",

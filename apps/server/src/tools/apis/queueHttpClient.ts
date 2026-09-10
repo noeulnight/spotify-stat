@@ -204,9 +204,11 @@ export class QueuedHttpClient {
       await this.sleep(retryAfterMs);
     }
 
-    const data = await response.json();
+    // Spotify returns 204 for successful player commands and when there is no
+    // active playback. Do not attempt to parse an empty response as JSON.
+    const data = response.status === 204 ? undefined : await response.json();
     queueItem.resolve({
-      data,
+      data: data as T,
       status: response.status,
       statusText: response.statusText,
     });

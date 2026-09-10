@@ -10,6 +10,7 @@ const validators = {
   SPOTIFY_PUBLIC: z.string(),
   SPOTIFY_SECRET: z.string(),
   API_ENDPOINT: z.string(),
+  HOST: z.string().optional(),
   PORT: z.preprocess(toNumber, z.number().optional()),
   TIMEZONE: z.string().optional(),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).optional(),
