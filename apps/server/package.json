@@ -1,6 +1,6 @@
 {
   "name": "@spotify-stat/server",
-  "version": "1.22.2",
+  "version": "1.22.3",
   "private": true,
   "scripts": {
     "build": "rsbuild build",

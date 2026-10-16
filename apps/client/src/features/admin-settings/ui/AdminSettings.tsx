@@ -75,13 +75,27 @@ export function AdminSettings() {
     },
     queryClient,
   );
+  const clearLyrics = useMutation(
+    {
+      mutationFn: api.clearLyricsCache,
+      onSuccess: () =>
+        queryClient.invalidateQueries({
+          queryKey: [...client.queryKey, "listening", "lyrics"],
+        }),
+    },
+    queryClient,
+  );
   if (!enabled) return null;
   const self = account.data?.status
     ? (account.data.user.id ?? account.data.user._id)
     : "";
   const adminCount = users.data?.filter((user) => user.admin).length ?? 0;
-  const busy = change.isPending || remove.isPending || save.isPending;
-  const error = change.error ?? remove.error ?? save.error;
+  const busy =
+    change.isPending ||
+    remove.isPending ||
+    save.isPending ||
+    clearLyrics.isPending;
+  const error = change.error ?? remove.error ?? save.error ?? clearLyrics.error;
   const message =
     isAxiosError(error) &&
     error.response?.data?.code === "CANNOT_HAVE_ZERO_ADMIN"
@@ -93,6 +107,27 @@ export function AdminSettings() {
         <CardTitle>Administration</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">Lyrics cache</p>
+            <p className="text-xs text-muted-foreground">
+              Clear cached lyrics for all users.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() => clearLyrics.mutate()}
+          >
+            {clearLyrics.isPending ? "Clearing…" : "Clear lyrics cache"}
+          </Button>
+        </div>
+        {clearLyrics.isSuccess && (
+          <p role="status" className="text-sm">
+            Lyrics cache cleared
+          </p>
+        )}
         {preferences.isPending ? (
           <Skeleton className="h-16 w-full" />
         ) : preferences.isError ? (

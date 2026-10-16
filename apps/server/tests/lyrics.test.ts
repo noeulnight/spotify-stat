@@ -50,19 +50,98 @@ test("lyrics sends precise metadata, identifies the client and deduplicates cach
 
 test("missing lyrics are cached, malformed or failed upstream responses are not", async () => {
   let calls = 0;
-  const missing = createLyricsLookup(async () => {
+  const missing = createLyricsLookup(async (input) => {
     calls++;
+    if (new URL(String(input)).pathname === "/api/search")
+      return Response.json([]);
     return new Response(null, { status: 404 });
   });
   assert.equal(await missing(signature), null);
   assert.equal(await missing(signature), null);
-  assert.equal(calls, 1);
+  assert.equal(calls, 2);
   const invalid = createLyricsLookup(async () => {
     calls++;
     return Response.json({ invalid: true });
   });
   await assert.rejects(invalid(signature));
   await assert.rejects(invalid(signature));
+  assert.equal(calls, 4);
+});
+
+test("404 searches by title and artist, validates versions and prefers the same album", async () => {
+  let calls = 0;
+  const candidate = {
+    ...lyrics,
+    trackName: " song ",
+    artistName: "ARTIST",
+    albumName: "Other album",
+    duration: 233.5,
+  };
+  const lookup = createLyricsLookup(async (input, init) => {
+    calls++;
+    const url = new URL(String(input));
+    if (url.pathname === "/api/get") return new Response(null, { status: 404 });
+    assert.equal(url.pathname, "/api/search");
+    assert.deepEqual(Object.fromEntries(url.searchParams), {
+      track_name: "Song",
+      artist_name: "Artist",
+    });
+    assert.ok(init?.signal);
+    return Response.json([
+      { ...candidate, id: 2, trackName: "Song (Live)" },
+      { ...candidate, id: 3, artistName: "Another artist" },
+      { ...candidate, id: 4, duration: 235.6 },
+      { ...candidate, id: 5, plainLyrics: null, syncedLyrics: null },
+      { ...candidate, id: 6 },
+      { ...candidate, id: 7, albumName: " album ", duration: 235.5 },
+    ]);
+  });
+  assert.deepEqual(await lookup(signature), { ...lyrics, id: 7 });
+  await lookup(signature);
+  assert.equal(calls, 2);
+});
+
+test("search rejects unrelated candidates and selects the closest duration without the album", async () => {
+  const candidate = {
+    ...lyrics,
+    trackName: "Song",
+    artistName: "Artist",
+    albumName: "Compilation",
+    duration: 234,
+  };
+  const lookup = createLyricsLookup(async (input) =>
+    new URL(String(input)).pathname === "/api/get"
+      ? new Response(null, { status: 404 })
+      : Response.json([
+          { ...candidate, id: 2, duration: 235 },
+          { ...candidate, id: 3 },
+        ]),
+  );
+  assert.deepEqual(await lookup(signature), { ...lyrics, id: 3 });
+  assert.equal(await lookup({ ...signature, trackName: "Song (Live)" }), null);
+  assert.equal(await lookup({ ...signature, artistName: "Other" }), null);
+  assert.equal(await lookup({ ...signature, durationMs: 250_000 }), null);
+});
+
+test("503 is not treated as a search miss and search failures retain retry-after", async () => {
+  let calls = 0;
+  const failed = createLyricsLookup(async () => {
+    calls++;
+    return new Response(null, { status: 503 });
+  });
+  await assert.rejects(failed(signature), LyricsUnavailable);
+  assert.equal(calls, 1);
+  const searchFailed = createLyricsLookup(async (input) => {
+    calls++;
+    return new URL(String(input)).pathname === "/api/get"
+      ? new Response(null, { status: 404 })
+      : new Response(null, { status: 503, headers: { "Retry-After": "60" } });
+  });
+  await assert.rejects(
+    searchFailed(signature),
+    (error) => error instanceof LyricsUnavailable && error.retryAfter === 60,
+  );
+  await assert.rejects(searchFailed(signature), LyricsUnavailable);
   assert.equal(calls, 3);
 });
 

@@ -6,6 +6,7 @@ import { CatalogSearchSchema } from "./schemas/catalogSearch";
 import { GlobalPreferencesSchema } from "./schemas/globalPreference";
 import { ImporterStateSchema } from "./schemas/import";
 import { InfosSchema } from "./schemas/info";
+import { LyricsCacheSchema } from "./schemas/lyricsCache";
 import { MigrationSchema } from "./schemas/migration";
 import { PrivateDataSchema } from "./schemas/privateData";
 import {
@@ -23,6 +24,7 @@ export const InfosModel = model("Infos", InfosSchema);
 export const ArtistModel = model("Artist", ArtistSchema);
 export const AlbumModel = model("Album", AlbumSchema);
 export const TrackModel = model("Track", TrackSchema);
+export const LyricsCacheModel = model("LyricsCache", LyricsCacheSchema);
 export const CatalogSearchModel = model("CatalogSearch", CatalogSearchSchema);
 export const MigrationModel = model("Migration", MigrationSchema);
 export const GlobalPreferencesModel = model(

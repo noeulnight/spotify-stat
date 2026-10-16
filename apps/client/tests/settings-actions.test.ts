@@ -79,3 +79,16 @@ test("mutation failures propagate for retry feedback", async () => {
     /Forbidden/,
   );
 });
+
+test("lyrics cache clearing uses an authenticated DELETE and is blocked for shared access", async () => {
+  const { client, requests } = setup();
+  await createAdminSettingsApi(client).clearLyricsCache();
+  assert.equal(requests[0]?.method, "delete");
+  assert.equal(requests[0]?.url, "/lyrics/cache");
+  const shared = setup("public-token");
+  await assert.rejects(
+    createAdminSettingsApi(shared.client).clearLyricsCache(),
+    /read-only/,
+  );
+  assert.equal(shared.requests.length, 0);
+});

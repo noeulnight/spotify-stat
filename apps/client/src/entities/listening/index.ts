@@ -23,6 +23,7 @@ export { getTopMonths } from "./model/top-months";
 export { useTracks } from "./api/hooks";
 export { AlbumLink } from "./ui/AlbumLink";
 export { MediaInfo, type MediaInfoProps } from "./ui/MediaInfo";
+export { TrackPlayButton } from "./ui/TrackPlayButton";
 export { useAlbums } from "./api/hooks";
 export { getAlbumOverview } from "./model/album-overview";
 export { MediaActionsProvider } from "./ui/media-actions";

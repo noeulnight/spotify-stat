@@ -6,6 +6,10 @@ export function createAdminSettingsApi(client: ApiClient) {
       throw new Error("Shared accounts are read-only");
   };
   return {
+    clearLyricsCache: async () => {
+      writable();
+      await client.http.delete("/lyrics/cache");
+    },
     setAdmin: async (id: string, status: boolean) => {
       writable();
       await client.http.put(`/admin/${encodeURIComponent(id)}`, { status });

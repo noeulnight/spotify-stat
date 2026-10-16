@@ -13,6 +13,7 @@ import {
   AlbumLink,
   ArtistLink,
   ListeningOverview,
+  TrackPlayButton,
 } from "../../../entities/listening";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../shared/ui/avatar";
 import { Button } from "../../../shared/ui/button";
@@ -81,16 +82,21 @@ export function SongDetails({
     <PlaylistActions>
       <div className="space-y-6">
         <header className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:pr-20">
-          <Avatar className="size-24 rounded-md after:rounded-md sm:size-32">
-            <AvatarImage
-              src={album?.images?.[0]?.url}
-              alt=""
-              className="rounded-md"
-            />
-            <AvatarFallback className="rounded-md">
-              <MusicIcon aria-hidden="true" className="size-10" />
-            </AvatarFallback>
-          </Avatar>
+          <div className="group/media-cover relative size-24 shrink-0 sm:size-32">
+            <Avatar className="size-full rounded-md after:rounded-md">
+              <AvatarImage
+                src={album?.images?.[0]?.url}
+                alt=""
+                className="rounded-md"
+              />
+              <AvatarFallback className="rounded-md">
+                <MusicIcon aria-hidden="true" className="size-10" />
+              </AvatarFallback>
+            </Avatar>
+            {!publicToken && (
+              <TrackPlayButton trackId={track.id} title={track.name} />
+            )}
+          </div>
           <div className="min-w-0 space-y-2">
             <div className="flex items-center gap-1">
               <h1 className="min-w-0 text-3xl font-semibold tracking-tight break-words">

@@ -50,7 +50,7 @@ router.get("/spotify", async (req, res) => {
       expiresIn: getWithDefault("COOKIE_VALIDITY_MS", "1h") as `${number}`,
     });
     storeTokenInCookie(req, res, token);
-    res.status(204).end();
+    res.redirect(new URL("/", get("CLIENT_ENDPOINT")).href);
     return;
   }
   const { url, state } = await spotifyProvider.getRedirect();
@@ -120,7 +120,7 @@ router.get("/spotify/callback", withGlobalPreferences, async (req, res) => {
   } finally {
     res.clearCookie(OAUTH_COOKIE_NAME);
   }
-  return res.redirect(get("CLIENT_ENDPOINT"));
+  return res.redirect(new URL("/", get("CLIENT_ENDPOINT")).href);
 });
 
 router.get("/spotify/me", logged, withHttpClient, async (req, res) => {

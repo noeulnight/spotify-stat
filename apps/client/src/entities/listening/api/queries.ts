@@ -12,7 +12,9 @@ export function createListeningQueries(client: ApiClient) {
         queryKey: [...client.queryKey, "listening", "lyrics", id],
         queryFn: ({ signal }) =>
           createListeningApi(client, signal).getLyrics(id),
-        staleTime: 3_600_000,
+        staleTime: (query) => (query.state.data === null ? 60_000 : 3_600_000),
+        refetchInterval: (query) =>
+          query.state.data === null ? 60_000 : false,
         retry: (failureCount, error) =>
           failureCount < 2 &&
           isAxiosError(error) &&
