@@ -1,0 +1,17 @@
+---
+import { PageSkeleton } from "../../../../shared/ui/page-skeleton";
+import AppLayout from "../../../../layouts/AppLayout.astro";
+import { SongDetails } from "../../../../widgets/song-details";
+
+export const prerender = false;
+const id = Astro.params.id!;
+const publicToken = Astro.params.token!;
+---
+
+<AppLayout social={{ kind: "songs", id }} publicToken={publicToken}>
+  <section>
+    <SongDetails id={id} publicToken={publicToken} client:only="react">
+      <PageSkeleton slot="fallback" layout="detail" columns={2} />
+    </SongDetails>
+  </section>
+</AppLayout>

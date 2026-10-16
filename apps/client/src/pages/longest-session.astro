@@ -1,0 +1,21 @@
+---
+import { PageSkeleton } from "../shared/ui/page-skeleton";
+import AppLayout from "../layouts/AppLayout.astro";
+import { LongestSessions } from "../widgets/longest-sessions";
+---
+
+<AppLayout title="Longest session · Spotistat">
+  <section aria-labelledby="longest-sessions-title" class="space-y-4">
+    <h1
+      id="longest-sessions-title"
+      class="text-2xl font-semibold tracking-tight"
+    >
+      Longest session
+    </h1>
+    <div class="min-w-0">
+      <LongestSessions client:only="react">
+        <PageSkeleton slot="fallback" layout="list" columns={4} />
+      </LongestSessions>
+    </div>
+  </section>
+</AppLayout>

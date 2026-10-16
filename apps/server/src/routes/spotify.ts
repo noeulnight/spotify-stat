@@ -26,6 +26,7 @@ import {
   getCollaborativeBestArtists,
   getCollaborativeBestSongs,
 } from "../database/queries/collaborative";
+import { playbackActions } from "../tools/apis/playback";
 import { HttpError } from "../tools/apis/queueHttpClient";
 import { DateFormatter, intervalToDisplay } from "../tools/date";
 import { logger } from "../tools/logger";
@@ -43,6 +44,27 @@ import { toDate, toNumber } from "../tools/zod";
 export const router = Router();
 
 const playSchema = z.object({ id: z.string() });
+const playbackSchema = z.object({ action: z.enum(playbackActions) });
+
+router.post("/playback/:action", logged, withHttpClient, async (req, res) => {
+  const { client } = req as SpotifyRequest;
+  const { action } = validate(req.params, playbackSchema);
+  try {
+    await client.controlPlayback(action);
+    res.status(204).end();
+  } catch (error) {
+    if (error instanceof HttpError) {
+      res
+        .status(error.status)
+        .json({
+          code: "SPOTIFY_ERROR",
+          reason: error.status === 404 ? "NO_ACTIVE_DEVICE" : undefined,
+        });
+      return;
+    }
+    throw error;
+  }
+});
 
 router.post("/play", logged, withHttpClient, async (req, res) => {
   const { client } = req as SpotifyRequest;

@@ -1,0 +1,25 @@
+---
+import AppLayout from "../../../layouts/AppLayout.astro";
+import { NowPlaying } from "../../../widgets/now-playing";
+import { PageSkeleton } from "../../../shared/ui/page-skeleton";
+
+export const prerender = false;
+const publicToken = Astro.params.token!;
+---
+
+<AppLayout title="Now playing · Spotistat" publicToken={publicToken}>
+  <section
+    class="flex h-[calc(100dvh-6rem)] min-h-80 flex-col gap-4 md:h-[calc(100dvh-7rem)]"
+    aria-labelledby="now-playing-title"
+  >
+    <h1
+      id="now-playing-title"
+      class="shrink-0 text-2xl font-semibold tracking-tight"
+    >
+      Now playing
+    </h1>
+    <NowPlaying publicToken={publicToken} client:only="react">
+      <PageSkeleton slot="fallback" layout="detail" />
+    </NowPlaying>
+  </section>
+</AppLayout>

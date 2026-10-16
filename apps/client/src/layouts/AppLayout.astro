@@ -1,0 +1,87 @@
+---
+import "../app/styles/global.css";
+import { AppShell } from "../app/ui/AppShell";
+import { ClientRouter } from "astro:transitions";
+import { SocialPreview, type PreviewKind } from "../features/social-preview";
+
+interface Props {
+  title?: string;
+  publicToken?: string;
+  social?: { kind: PreviewKind; id: string };
+}
+
+const { title = "Spotistat", publicToken, social } = Astro.props;
+const activePath = Astro.url.pathname.replace(/\/$/, "") || "/";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    {social ? (
+      <SocialPreview {...social} publicToken={publicToken} />
+    ) : (
+      <title>{title}</title>
+    )}
+    <meta name="referrer" content="no-referrer" />
+    <script is:inline>
+      (() => {
+        let theme = "system";
+        try {
+          theme = localStorage.getItem("spotistat-theme") || "system";
+        } catch {}
+        const dark =
+          theme === "dark" ||
+          (theme !== "light" &&
+            matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
+      })();
+    </script>
+    <ClientRouter />
+  </head>
+  <body>
+    <a href="#main-content" class="sr-only focus:not-sr-only">
+      Skip to content
+    </a>
+    <AppShell
+      activePath={activePath}
+      publicToken={publicToken}
+      client:load
+      transition:persist="app-shell"
+    >
+      <div
+        data-page-content
+        class="mx-auto w-full min-w-0 max-w-6xl px-4 py-6 md:px-6 md:py-8"
+      >
+        <slot />
+      </div>
+    </AppShell>
+    <script>
+      document.addEventListener("astro:before-swap", (event) => {
+        if (import.meta.env.DEV) {
+          // Keep Vite's current Tailwind rules instead of the fetched HTML's stale CSS.
+          const selector =
+            'style[data-vite-dev-id$="/src/app/styles/global.css"]';
+          const current = document.querySelector(selector);
+          const next = event.newDocument.querySelector(selector);
+          if (current && next) next.textContent = current.textContent;
+        }
+        event.newDocument.documentElement.classList.toggle(
+          "dark",
+          document.documentElement.classList.contains("dark"),
+        );
+        event.newDocument.documentElement.style.colorScheme =
+          document.documentElement.style.colorScheme;
+        const selector =
+          '[data-astro-transition-persist="app-shell"] [data-page-content]';
+        const current = document.querySelector(selector);
+        const next = event.newDocument.querySelector(selector);
+
+        // Persist the React shell, but replace the static Astro page slot.
+        if (current && next) current.replaceChildren(...next.childNodes);
+      });
+    </script>
+  </body>
+</html>

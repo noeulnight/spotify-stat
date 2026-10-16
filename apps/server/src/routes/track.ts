@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   getArtists,
   getTracks,
-  getTrackListenedCount,
+  getTrackListeningTotal,
   getTrackFirstAndLastListened,
   bestPeriodOfTrack,
   getTrackRecentHistory,
@@ -42,15 +42,15 @@ router.get("/:id/stats", isLoggedOrGuest, async (req, res) => {
   }
   const promises = [
     getAlbums([track.album]),
-    getTrackListenedCount(user, id),
+    getTrackListeningTotal(user, id),
     getArtists([trackArtist]),
     getTrackFirstAndLastListened(user, track.id),
     bestPeriodOfTrack(user, track.id),
     getTrackRecentHistory(user, track.id),
   ];
-  const [[album], count, [artist], firstLast, bestPeriod, recentHistory] =
+  const [[album], total, [artist], firstLast, bestPeriod, recentHistory] =
     await Promise.all(promises);
-  if (!count) {
+  if (!total.count) {
     res.status(200).send({ code: "NEVER_LISTENED" });
     return;
   }
@@ -63,7 +63,7 @@ router.get("/:id/stats", isLoggedOrGuest, async (req, res) => {
       bestPeriod,
       firstLast,
       recentHistory,
-      total: { count },
+      total,
     });
 });
 

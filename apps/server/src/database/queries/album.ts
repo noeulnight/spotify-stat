@@ -91,6 +91,24 @@ export const getAlbumStatsData = async (user: User, albumId: string) => {
     { $match: { owner: user._id, albumId } },
     {
       $facet: {
+        total: [
+          {
+            $group: {
+              _id: null,
+              count: { $sum: 1 },
+              durationMs: { $sum: "$durationMs" },
+              trackIds: { $addToSet: "$id" },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              count: 1,
+              durationMs: 1,
+              differents: { $size: "$trackIds" },
+            },
+          },
+        ],
         firstLast: [
           { $sort: { played_at: 1, _id: 1 } },
           {
@@ -127,7 +145,18 @@ export const getAlbumStatsData = async (user: User, albumId: string) => {
         ],
       },
     },
-    { $project: { firstLast: { $arrayElemAt: ["$firstLast", 0] }, tracks: 1 } },
+    {
+      $project: {
+        firstLast: { $arrayElemAt: ["$firstLast", 0] },
+        tracks: 1,
+        total: {
+          $ifNull: [
+            { $arrayElemAt: ["$total", 0] },
+            { count: 0, durationMs: 0, differents: 0 },
+          ],
+        },
+      },
+    },
   ]);
   return result;
 };

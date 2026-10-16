@@ -35,9 +35,10 @@ services:
       context: .
       dockerfile: Dockerfile.client.production
       args:
-        NODE_ENV: production
+        PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-http://127.0.0.1:8080}
+        SITE_URL: ${SITE_URL:-http://127.0.0.1:3000}
     ports:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      API_ENDPOINT: http://127.0.0.1:8080
+      API_BASE_URL: http://app:8080

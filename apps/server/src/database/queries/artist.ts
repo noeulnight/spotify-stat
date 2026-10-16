@@ -307,10 +307,18 @@ export const getArtistStatsData = async (user: User, artistId: string) => {
               _id: null,
               count: { $sum: 1 },
               trackIds: { $addToSet: "$id" },
+              albumIds: { $addToSet: "$albumId" },
+              durationMs: { $sum: "$durationMs" },
             },
           },
           {
-            $project: { _id: 1, count: 1, differents: { $size: "$trackIds" } },
+            $project: {
+              _id: 1,
+              count: 1,
+              durationMs: 1,
+              differents: { $size: "$trackIds" },
+              albums: { $size: { $setDifference: ["$albumIds", [null, ""]] } },
+            },
           },
         ],
         dayRepartition: [

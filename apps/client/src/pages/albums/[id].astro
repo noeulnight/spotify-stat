@@ -1,0 +1,16 @@
+---
+import { PageSkeleton } from "../../shared/ui/page-skeleton";
+import AppLayout from "../../layouts/AppLayout.astro";
+import { AlbumDetails } from "../../widgets/album-details";
+
+export const prerender = false;
+const id = Astro.params.id!;
+---
+
+<AppLayout social={{ kind: "albums", id }}>
+  <section>
+    <AlbumDetails id={id} client:only="react">
+      <PageSkeleton slot="fallback" layout="detail" columns={3} />
+    </AlbumDetails>
+  </section>
+</AppLayout>

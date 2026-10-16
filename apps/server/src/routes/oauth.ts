@@ -68,6 +68,12 @@ router.get("/spotify", async (req, res) => {
 const spotifyCallback = z.object({ code: z.string(), state: z.string() });
 
 router.get("/spotify/callback", withGlobalPreferences, async (req, res) => {
+  if (typeof req.query.error === "string") {
+    return res
+      .status(502)
+      .send({ type: "SPOTIFY_AUTH_ERROR", code: req.query.error });
+  }
+
   const { query, globalPreferences } = req as GlobalPreferencesRequest;
   const { code, state } = validate(query, spotifyCallback);
 

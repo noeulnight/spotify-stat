@@ -1,0 +1,8 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import { RegistrationNotice } from "../features/spotify-login";
+---
+
+<AppLayout title="Registrations closed · Spotistat">
+  <RegistrationNotice client:only="react" />
+</AppLayout>

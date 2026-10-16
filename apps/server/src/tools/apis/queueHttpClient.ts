@@ -8,6 +8,7 @@ interface HttpClientRequestConfig {
   headers?: Record<string, string>;
   priority?: RequestPriority;
   retry429MaxAttempts?: number;
+  responseType?: "json" | "none";
 }
 
 interface HttpClientResponse<T> {
@@ -204,9 +205,11 @@ export class QueuedHttpClient {
       await this.sleep(retryAfterMs);
     }
 
-    // Spotify returns 204 for successful player commands and when there is no
-    // active playback. Do not attempt to parse an empty response as JSON.
-    const data = response.status === 204 ? undefined : await response.json();
+    // Player commands can return a non-JSON body even when they succeed.
+    const data =
+      response.status === 204 || queueItem.config.responseType === "none"
+        ? undefined
+        : await response.json();
     queueItem.resolve({
       data: data as T,
       status: response.status,

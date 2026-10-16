@@ -1,0 +1,21 @@
+---
+import { PageSkeleton } from "../../../../shared/ui/page-skeleton";
+import AppLayout from "../../../../layouts/AppLayout.astro";
+import { TopSongsTable } from "../../../../widgets/top-songs";
+
+export const prerender = false;
+const publicToken = Astro.params.token!;
+---
+
+<AppLayout title="Top songs · Spotistat" publicToken={publicToken}>
+  <section aria-labelledby="top-songs-title" class="space-y-4">
+    <h1 id="top-songs-title" class="text-2xl font-semibold tracking-tight">
+      Top songs
+    </h1>
+    <div class="min-w-0">
+      <TopSongsTable publicToken={publicToken} client:only="react">
+        <PageSkeleton slot="fallback" layout="table" columns={5} />
+      </TopSongsTable>
+    </div>
+  </section>
+</AppLayout>

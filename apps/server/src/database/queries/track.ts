@@ -17,6 +17,21 @@ export const searchTrack = async (str: string, limit = 20) => {
 export const getTrackListenedCount = (user: User, trackId: string) =>
   InfosModel.where({ owner: user._id, id: trackId }).countDocuments();
 
+export const getTrackListeningTotal = async (user: User, trackId: string) => {
+  const [total] = await InfosModel.aggregate([
+    { $match: { owner: user._id, id: trackId } },
+    {
+      $group: {
+        _id: null,
+        count: { $sum: 1 },
+        durationMs: { $sum: "$durationMs" },
+      },
+    },
+    { $project: { _id: 0, count: 1, durationMs: 1 } },
+  ]);
+  return total ?? { count: 0, durationMs: 0 };
+};
+
 export const getTrackFirstAndLastListened = async (
   user: User,
   trackId: string,

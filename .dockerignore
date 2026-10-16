@@ -1,0 +1,11 @@
+.git
+**/node_modules
+**/.astro
+**/dist
+**/build
+**/build-local
+**/.env
+**/.env.*
+**/*.log
+db_data
+spotify-stat-db

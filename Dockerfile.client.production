@@ -1,44 +1,26 @@
-FROM node:25-alpine AS builder
+FROM node:26.12.0-alpine AS builder
 
 WORKDIR /app
+RUN npm install -g pnpm@11.9.0
 
-ENV MONGO_ENDPOINT=mongodb://mongo:27017/spotify-stat
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/client/package.json ./apps/client/package.json
+RUN CI=true pnpm --filter spotistat... install --frozen-lockfile
 
-RUN apk add python3 gcc g++ make cmake
-RUN npm install -g pnpm
+COPY apps/client ./apps/client
+ARG PUBLIC_API_BASE_URL=http://127.0.0.1:8080
+ARG SITE_URL=http://127.0.0.1:3000
+ENV PUBLIC_API_BASE_URL=${PUBLIC_API_BASE_URL} SITE_URL=${SITE_URL}
+WORKDIR /app/apps/client
+RUN pnpm typecheck && pnpm build
+RUN CI=true pnpm --filter spotistat... install --prod --frozen-lockfile
 
-COPY pnpm-lock.yaml pnpm-lock.yaml
-COPY package.json package.json
-COPY pnpm-workspace.yaml pnpm-workspace.yaml
-
-COPY apps/dev/package.json apps/dev/package.json
-COPY apps/dev/tsconfig.json apps/dev/tsconfig.json
-
-COPY apps/client/package.json apps/client/package.json
-COPY apps/client/tsconfig.json apps/client/tsconfig.json
-COPY apps/client/rsbuild.config.ts apps/client/rsbuild.config.ts
-
-RUN CI=true pnpm install --frozen-lockfile --dangerously-allow-all-builds
-
-COPY apps/client/public apps/client/public
-COPY apps/client/src apps/client/src
-COPY apps/client/scripts apps/client/scripts
+FROM node:26.12.0-alpine
 
 WORKDIR /app/apps/client
-
-RUN pnpm typecheck
-RUN pnpm build
-
-ARG NODE_ENV
-ENV NODE_ENV=${NODE_ENV:-production}
-
-FROM node:25-alpine
-
-WORKDIR /app
-
-RUN npm install -g serve
-
-COPY --from=builder /app/apps/client/scripts/ apps/client/scripts/
-COPY --from=builder /app/apps/client/build/ apps/client/build/
-
-ENTRYPOINT [ "sh", "/app/apps/client/scripts/run/run.sh" ]
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
+COPY --from=builder /app/node_modules /app/node_modules
+COPY --from=builder /app/apps/client/node_modules ./node_modules
+COPY --from=builder /app/apps/client/dist ./dist
+EXPOSE 3000
+CMD ["node", "dist/server/entry.mjs"]

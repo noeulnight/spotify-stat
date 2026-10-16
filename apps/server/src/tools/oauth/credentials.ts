@@ -10,6 +10,7 @@ export const credentials = {
       "user-read-recently-played",
       "user-read-currently-playing",
       "user-modify-playback-state",
+      "playlist-read-private",
       "playlist-modify-private",
       "playlist-modify-public",
     ].join(" "),

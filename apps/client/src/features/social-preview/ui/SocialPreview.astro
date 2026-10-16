@@ -1,0 +1,40 @@
+---
+import { loadPreview } from "../api/preview";
+import { previewImageUrl, type PreviewKind } from "../model/preview";
+
+interface Props {
+  kind: PreviewKind;
+  id: string;
+  publicToken?: string;
+}
+
+const { kind, id, publicToken } = Astro.props;
+const origin = Astro.site ?? Astro.url;
+const preview = await loadPreview(kind, id, origin, publicToken);
+const title = preview.title;
+const image = previewImageUrl(origin, kind, id, publicToken);
+const pageUrl = new URL(Astro.url.pathname, origin).href;
+---
+
+<title>{title}</title>
+<meta name="description" content={preview.subtitle} />
+<meta property="og:type" content="website" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={preview.subtitle} />
+<meta property="og:url" content={pageUrl} />
+<meta property="og:image" content={image} />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta
+  property="og:image:alt"
+  content={`${preview.title} — ${preview.subtitle}`}
+/>
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={preview.subtitle} />
+<meta name="twitter:image" content={image} />
+<meta
+  name="twitter:image:alt"
+  content={`${preview.title} — ${preview.subtitle}`}
+/>

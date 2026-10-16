@@ -1,0 +1,18 @@
+---
+import { PageSkeleton } from "../shared/ui/page-skeleton";
+import AppLayout from "../layouts/AppLayout.astro";
+import { Stats } from "../widgets/stats";
+---
+
+<AppLayout title="Stats · Spotistat">
+  <section aria-labelledby="stats-title" class="space-y-4">
+    <h1 id="stats-title" class="text-2xl font-semibold tracking-tight">
+      Stats
+    </h1>
+    <div class="min-w-0">
+      <Stats client:only="react">
+        <PageSkeleton slot="fallback" layout="list" columns={4} />
+      </Stats>
+    </div>
+  </section>
+</AppLayout>

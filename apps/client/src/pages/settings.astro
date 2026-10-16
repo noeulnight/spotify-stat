@@ -1,0 +1,16 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import { Settings } from "../widgets/settings";
+import { PageSkeleton } from "../shared/ui/page-skeleton";
+---
+
+<AppLayout title="Settings · Spotistat">
+  <section aria-labelledby="settings-title" class="space-y-4">
+    <h1 id="settings-title" class="text-2xl font-semibold tracking-tight">
+      Settings
+    </h1>
+    <Settings client:only="react">
+      <PageSkeleton slot="fallback" layout="list" />
+    </Settings>
+  </section>
+</AppLayout>

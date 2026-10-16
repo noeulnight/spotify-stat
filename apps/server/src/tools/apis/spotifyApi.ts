@@ -7,6 +7,7 @@ import { SpotifyTrack } from "../../database/schemas/track";
 import { logger } from "../logger";
 import { chunk } from "../misc";
 import { spotifyProvider } from "../oauth/Provider";
+import { controlPlayback, type PlaybackAction } from "./playback";
 import { HttpError } from "./queueHttpClient";
 
 export interface SpotifyMe {
@@ -70,7 +71,14 @@ export class SpotifyAPI {
 
   public async playTrack(trackUri: string) {
     const client = await this.checkToken();
-    return client.put("/me/player/play", { data: { uris: [trackUri] } });
+    return client.put("/me/player/play", {
+      data: { uris: [trackUri] },
+      responseType: "none",
+    });
+  }
+
+  public async controlPlayback(action: PlaybackAction) {
+    return controlPlayback(await this.checkToken(), action);
   }
 
   public async me() {
@@ -109,7 +117,7 @@ export class SpotifyAPI {
       const chk = chunks[i]!;
 
       const client = await this.checkToken();
-      await client.post(`/playlists/${id}/tracks`, {
+      await client.post(`/playlists/${id}/items`, {
         data: { uris: chk.map((trackId) => `spotify:track:${trackId}`) },
       });
     }

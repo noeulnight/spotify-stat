@@ -1,7 +1,12 @@
 {
-  "extends": ["@spotify-stat/dev/tsconfig.json"],
+  "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "jsx": "react-jsx"
-  }
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"]
 }

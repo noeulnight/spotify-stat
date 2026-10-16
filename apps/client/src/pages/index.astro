@@ -1,0 +1,16 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import { Home } from "../widgets/home";
+import { PageSkeleton } from "../shared/ui/page-skeleton";
+---
+
+<AppLayout>
+  <section aria-labelledby="home-title" class="space-y-4">
+    <h1 id="home-title" class="text-2xl font-semibold tracking-tight">
+      Home
+    </h1>
+    <Home client:only="react">
+      <PageSkeleton slot="fallback" layout="list" />
+    </Home>
+  </section>
+</AppLayout>
