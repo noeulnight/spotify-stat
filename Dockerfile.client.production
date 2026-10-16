@@ -8,7 +8,7 @@ COPY apps/client/package.json ./apps/client/package.json
 RUN CI=true pnpm --filter spotistat... install --frozen-lockfile
 
 COPY apps/client ./apps/client
-ARG PUBLIC_API_BASE_URL=http://127.0.0.1:8080
+ARG PUBLIC_API_BASE_URL=/api
 ARG SITE_URL=http://127.0.0.1:3000
 ENV PUBLIC_API_BASE_URL=${PUBLIC_API_BASE_URL} SITE_URL=${SITE_URL}
 WORKDIR /app/apps/client

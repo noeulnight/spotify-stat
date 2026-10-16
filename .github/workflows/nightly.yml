@@ -52,6 +52,9 @@ jobs:
         with:
           context: .
           file: ./Dockerfile.client.production
+          build-args: |
+            PUBLIC_API_BASE_URL=/api
+            SITE_URL=https://spotify.lth.so
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
