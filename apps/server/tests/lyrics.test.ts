@@ -97,3 +97,48 @@ test("instrumental responses retain their explicit state", async () => {
   );
   assert.equal((await lookup(signature))?.instrumental, true);
 });
+
+test("catalog lyrics metadata skips Spotify and missing tracks use matching current playback", async () => {
+  const { resolveLyricsSignature } = await import("../src/tools/apis/lyrics");
+  let calls = 0;
+  const playback = async () => {
+    calls++;
+    return {
+      currently_playing_type: "track",
+      item: {
+        id: "current-id",
+        name: "Current song",
+        duration_ms: 180000,
+        artists: [{ name: "Current artist" }],
+        album: { name: "Current album" },
+      },
+    };
+  };
+  assert.deepEqual(
+    await resolveLyricsSignature("stored-id", signature, playback),
+    signature,
+  );
+  assert.equal(calls, 0);
+  assert.deepEqual(await resolveLyricsSignature("current-id", null, playback), {
+    trackName: "Current song",
+    artistName: "Current artist",
+    albumName: "Current album",
+    durationMs: 180000,
+  });
+  assert.equal(calls, 1);
+  assert.equal(
+    await resolveLyricsSignature("different-id", null, playback),
+    null,
+  );
+  assert.equal(
+    await resolveLyricsSignature("current-id", null, async () => null),
+    null,
+  );
+  assert.equal(
+    await resolveLyricsSignature("current-id", null, async () => ({
+      ...(await playback()),
+      currently_playing_type: "episode",
+    })),
+    null,
+  );
+});

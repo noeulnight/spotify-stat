@@ -14,6 +14,35 @@ export interface LyricsSignature {
   durationMs: number;
 }
 
+export async function resolveLyricsSignature(
+  trackId: string,
+  stored: LyricsSignature | null,
+  getPlayback: () => Promise<{
+    currently_playing_type: string;
+    item: {
+      id: string;
+      name: string;
+      duration_ms: number;
+      artists: { name: string }[];
+      album: { name: string };
+    } | null;
+  } | null>,
+): Promise<LyricsSignature | null> {
+  if (stored) return stored;
+  const playback = await getPlayback();
+  const track = playback?.item;
+  if (playback?.currently_playing_type !== "track" || track?.id !== trackId)
+    return null;
+  const artist = track.artists[0];
+  if (!artist) return null;
+  return {
+    trackName: track.name,
+    artistName: artist.name,
+    albumName: track.album.name,
+    durationMs: track.duration_ms,
+  };
+}
+
 export class LyricsUnavailable extends Error {
   constructor(public readonly retryAfter = 1) {
     super("Lyrics service unavailable");

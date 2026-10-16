@@ -310,3 +310,74 @@ test("lyrics lookup preserves encoded track id, shared access and cancellation",
   assert.equal(await createListeningApi(client).getLyrics("missing"), null);
   cache.clear();
 });
+
+test("lyrics automatically recover from transient failures despite global retries being disabled", async () => {
+  const { client } = setup();
+  let calls = 0;
+  client.http.defaults.adapter = async (config) => {
+    calls++;
+    if (calls < 3) {
+      throw new AxiosError(
+        "Temporary outage",
+        "ERR_BAD_RESPONSE",
+        config,
+        undefined,
+        {
+          config,
+          data: null,
+          status: 503,
+          statusText: "Unavailable",
+          headers: { "retry-after": "1" },
+        },
+      );
+    }
+    return { config, data: null, status: 200, statusText: "OK", headers: {} };
+  };
+  const queries = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  try {
+    assert.equal(
+      await queries.fetchQuery({
+        ...createListeningQueries(client).getLyrics("track"),
+        retryDelay: 0,
+      }),
+      null,
+    );
+    assert.equal(calls, 3);
+  } finally {
+    queries.clear();
+  }
+});
+
+test("lyrics retries are bounded, respect Retry-After and exclude permanent or cancelled failures", () => {
+  const { client } = setup();
+  const { retry, retryDelay } =
+    createListeningQueries(client).getLyrics("track");
+  assert.equal(typeof retry, "function");
+  assert.equal(typeof retryDelay, "function");
+  if (typeof retry !== "function" || typeof retryDelay !== "function")
+    throw new Error("Expected retry policies");
+  const errorFor = (status: number, header: string = "3") =>
+    new AxiosError("Failed", "ERR_BAD_RESPONSE", undefined, undefined, {
+      config: {} as InternalAxiosRequestConfig,
+      data: null,
+      status,
+      statusText: "Error",
+      headers: { "retry-after": header },
+    });
+  for (const status of [429, 502, 503, 504]) {
+    assert.equal(retry(0, errorFor(status)), true);
+    assert.equal(retry(2, errorFor(status)), false);
+  }
+  for (const status of [400, 401, 403, 404])
+    assert.equal(retry(0, errorFor(status)), false);
+  assert.equal(retry(0, new CanceledError()), false);
+  assert.equal(retry(0, new AxiosError("Network", "ERR_NETWORK")), true);
+  assert.equal(retryDelay(0, errorFor(503)), 3000);
+  assert.ok(
+    retryDelay(0, errorFor(503, new Date(Date.now() + 60000).toUTCString())) >
+      58000,
+  );
+  assert.equal(retryDelay(0, errorFor(503, "invalid")), 1000);
+});

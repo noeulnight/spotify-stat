@@ -1,4 +1,5 @@
 import { queryOptions, infiniteQueryOptions } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 import type { ApiClient } from "../../../shared/api";
 import { createListeningApi } from "./api";
 
@@ -12,6 +13,25 @@ export function createListeningQueries(client: ApiClient) {
         queryFn: ({ signal }) =>
           createListeningApi(client, signal).getLyrics(id),
         staleTime: 3_600_000,
+        retry: (failureCount, error) =>
+          failureCount < 2 &&
+          isAxiosError(error) &&
+          error.code !== "ERR_CANCELED" &&
+          (!error.response ||
+            [429, 502, 503, 504].includes(error.response.status)),
+        retryDelay: (attempt, error) => {
+          const header = isAxiosError(error)
+            ? error.response?.headers["retry-after"]
+            : undefined;
+          if (header != null) {
+            const value = String(header);
+            const delay = /^\d+$/.test(value)
+              ? Number(value) * 1000
+              : Date.parse(value) - Date.now();
+            if (Number.isFinite(delay)) return Math.max(1000, delay);
+          }
+          return Math.min(1000 * 2 ** attempt, 10_000);
+        },
       }),
     currentlyPlaying: (...args: Parameters<Api["currentlyPlaying"]>) =>
       queryOptions({

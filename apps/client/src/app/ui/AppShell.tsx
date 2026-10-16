@@ -14,6 +14,7 @@ import {
 import { TooltipProvider } from "@/shared/ui/tooltip";
 import { Toaster } from "@/shared/ui/sonner";
 import { AccountTheme } from "./AccountTheme";
+import { SharePageButton } from "../../features/account-settings";
 
 export function AppShell({
   children,
@@ -59,6 +60,12 @@ export function AppShell({
                     activePath={activePath}
                     publicToken={publicToken}
                   />
+                  <div className="ml-auto shrink-0">
+                    <SharePageButton
+                      activePath={activePath}
+                      publicToken={publicToken}
+                    />
+                  </div>
                 </header>
                 {children}
               </SidebarInset>
