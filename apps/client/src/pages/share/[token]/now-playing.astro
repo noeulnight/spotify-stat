@@ -9,15 +9,9 @@ const publicToken = Astro.params.token!;
 
 <AppLayout title="Now playing · Spotistat" publicToken={publicToken}>
   <section
-    class="flex h-[calc(100dvh-6rem)] min-h-80 flex-col gap-4 md:h-[calc(100dvh-7rem)]"
-    aria-labelledby="now-playing-title"
+    class="-mt-2 flex h-[calc(100dvh-5.5rem)] min-h-80 flex-col md:h-[calc(100dvh-6.5rem)]"
+    aria-label="Now playing"
   >
-    <h1
-      id="now-playing-title"
-      class="shrink-0 text-2xl font-semibold tracking-tight"
-    >
-      Now playing
-    </h1>
     <NowPlaying publicToken={publicToken} client:only="react">
       <PageSkeleton slot="fallback" layout="detail" />
     </NowPlaying>

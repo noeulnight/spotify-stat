@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { registerHooks } from "node:module";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,8 +10,18 @@ import {
   createListeningQueries,
   type CurrentlyPlayingResponse,
 } from "../src/entities/listening";
-import { SidebarFooterContent } from "../src/widgets/sidebar/ui/SidebarFooterContent";
 import { SidebarProvider } from "../src/shared/ui/sidebar";
+
+const cssHook = registerHooks({
+  load(url, context, nextLoad) {
+    return url.endsWith("/lyrics-text.css")
+      ? { format: "module", source: "", shortCircuit: true }
+      : nextLoad(url, context);
+  },
+});
+const { SidebarFooterContent } =
+  await import("../src/widgets/sidebar/ui/SidebarFooterContent");
+cssHook.deregister();
 
 function renderFooter(signedIn: boolean) {
   const client = createApiClient({ baseURL: "/api" });

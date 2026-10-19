@@ -1,6 +1,6 @@
 {
   "name": "@spotify-stat/root",
-  "version": "1.22.6",
+  "version": "1.22.7",
   "repository": "git@github.com:noeulnight/spotify-stat.git",
   "author": "Taehyun Lim <me@lth.so>",
   "contributors": ["Timothee <timothee.boussus@gmail.com>"],

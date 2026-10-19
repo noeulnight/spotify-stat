@@ -1,0 +1,110 @@
+@property --lyrics-progress {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+
+.lyrics-text {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  overflow-anchor: none;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 min(24px, 10%),
+    #000 calc(100% - min(24px, 10%)),
+    transparent
+  );
+  transition: height 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lyrics-text[data-mode="preview"] {
+  height: 8.25rem;
+}
+
+.lyrics-text[data-mode="full"] {
+  height: min(60dvh, 32rem);
+}
+
+.lyrics-text__list {
+  display: block;
+  padding-block: 12px;
+}
+
+.lyrics-text[data-synced="true"] .lyrics-text__list {
+  padding-bottom: var(--lyrics-follow-end-space, 12px);
+}
+
+.lyrics-text__line,
+.lyrics-text__plain {
+  display: block;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  white-space: pre-line;
+}
+
+.lyrics-text__line {
+  padding-block: 0.1em;
+  transform-origin: left center;
+  transform: scale(0.95);
+  transition:
+    transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 350ms ease,
+    --lyrics-progress 200ms linear;
+}
+
+.lyrics-text__words {
+  display: block;
+}
+
+.lyrics-text__line[data-state="upcoming"] {
+  opacity: 0.5;
+}
+
+.lyrics-text[data-synced="true"] .lyrics-text__line[data-state="sung"] {
+  opacity: 1;
+}
+
+.lyrics-text .lyrics-text__line[data-state="active"] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.lyrics-text__line[data-state="active"] .lyrics-text__words {
+  background-image: linear-gradient(
+    180deg,
+    currentColor var(--lyrics-progress),
+    color-mix(in srgb, currentColor 50%, transparent)
+      calc(var(--lyrics-progress) + 20%)
+  );
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lyrics-text {
+    transition: none;
+  }
+  .lyrics-text__line {
+    transition: none;
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .lyrics-text {
+    mask-image: none;
+  }
+  .lyrics-text .lyrics-text__line {
+    opacity: 1;
+  }
+  .lyrics-text__line[data-state="active"] .lyrics-text__words {
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}

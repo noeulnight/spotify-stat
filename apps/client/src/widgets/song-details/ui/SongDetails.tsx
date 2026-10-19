@@ -1,5 +1,6 @@
 import { PlaylistActions } from "../../../features/save-to-playlist";
 import { SaveToPlaylist } from "../../../features/save-to-playlist";
+import { SongLyrics } from "../../../features/view-lyrics";
 import { useDateFormat } from "../../../entities/account";
 import { PageSkeleton } from "../../../shared/ui/page-skeleton";
 import { Skeleton } from "../../../shared/ui/skeleton";
@@ -205,11 +206,14 @@ export function SongDetails({
           </nav>
         </header>
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-          <ListeningOverview
-            dateFormat={dateFormat}
-            stats={stats}
-            publicToken={publicToken}
-          />
+          <div className="min-w-0 space-y-5">
+            <ListeningOverview
+              dateFormat={dateFormat}
+              stats={stats}
+              publicToken={publicToken}
+            />
+            <SongLyrics trackId={track.id} publicToken={publicToken} />
+          </div>
           {stats ? (
             <Card
               role="region"

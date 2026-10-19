@@ -1,3 +1,19 @@
+import {
+  getPlaybackProgress,
+  type CurrentlyPlayingResponse,
+  type TrackLyrics,
+} from "../../../entities/listening";
+
+export function getLyricsText(lyrics: TrackLyrics | null | undefined): string {
+  return (
+    lyrics?.plainLyrics?.trim() ||
+    parseLyrics(lyrics?.syncedLyrics)
+      .map((line) => line.text)
+      .join("\n")
+      .trim()
+  );
+}
+
 export interface LyricLine {
   timeMs: number;
   text: string;
@@ -38,4 +54,15 @@ export function activeLyricIndex(lines: LyricLine[], positionMs: number) {
     index = i;
   }
   return index;
+}
+
+export function activeSongLyricIndex(
+  lines: LyricLine[],
+  trackId: string,
+  playback: CurrentlyPlayingResponse | null | undefined,
+  now: number,
+) {
+  return playback?.track.id === trackId
+    ? activeLyricIndex(lines, getPlaybackProgress(playback, now).positionMs)
+    : -1;
 }
