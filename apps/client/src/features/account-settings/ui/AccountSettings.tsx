@@ -12,6 +12,7 @@ import { PageSkeleton } from "../../../shared/ui/page-skeleton";
 import { useSettings } from "../model/use-settings";
 import { validateSettings } from "../model/validation";
 import type { Settings } from "../api/settings";
+import { ShareKeyEditor } from "./ShareKeyEditor";
 import { SettingsSelect } from "./SettingsSelect";
 
 export function AccountSettings({ children }: { children?: ReactNode }) {
@@ -72,7 +73,10 @@ function SettingsForm({
     state.save.reset();
   };
   const zones = Intl.supportedValuesOf("timeZone");
-  const shareBusy = state.createShare.isPending || state.revokeShare.isPending;
+  const shareBusy =
+    state.createShare.isPending ||
+    state.revokeShare.isPending ||
+    state.changeShareKey.isPending;
   return (
     <div className="grid items-start gap-5 lg:grid-cols-2">
       <div className="min-w-0 space-y-5">
@@ -129,6 +133,12 @@ function SettingsForm({
             {shareUrl ? (
               <>
                 <Input aria-label="Share link" readOnly value={shareUrl} />
+                <ShareKeyEditor
+                  key={user.publicToken}
+                  currentKey={user.publicToken!}
+                  state={state}
+                  disabled={shareBusy}
+                />
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
@@ -163,6 +173,11 @@ function SettingsForm({
               >
                 Enable sharing
               </Button>
+            )}
+            {state.changeShareKey.isSuccess && (
+              <p role="status">
+                Sharing key saved. The previous link no longer works.
+              </p>
             )}
             {copied && <p role="status">{copied}</p>}
             {(state.createShare.isError || state.revokeShare.isError) && (

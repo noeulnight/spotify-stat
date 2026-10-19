@@ -5,7 +5,10 @@ import {
   createSettingsApi,
   type Settings,
 } from "../src/features/account-settings/api/settings";
-import { validateSettings } from "../src/features/account-settings/model/validation";
+import {
+  validateSettings,
+  validateShareKey,
+} from "../src/features/account-settings/model/validation";
 import { createAccountDateFormat } from "../src/entities/account/model/date-format";
 
 const settings: Settings = {
@@ -141,4 +144,75 @@ test("50 chart items respect the backend 30-item request limit", async () => {
     [],
   );
   assert.equal(requests.length, 1);
+});
+
+test("sharing key changes check availability, preserve conflicts, and reject public-client writes", async () => {
+  const client = createApiClient({ baseURL: "/api" });
+  const requests: {
+    method?: string;
+    url?: string;
+    data: unknown;
+    params: unknown;
+  }[] = [];
+  client.http.defaults.adapter = async (config) => {
+    requests.push({
+      method: config.method,
+      url: config.url,
+      data: config.data && JSON.parse(config.data),
+      params: config.params,
+    });
+    return {
+      data:
+        config.method === "get"
+          ? { key: "new-key", available: true }
+          : "new-key",
+      status: 200,
+      statusText: "OK",
+      headers: {},
+      config,
+    };
+  };
+  const api = createSettingsApi(client);
+  assert.deepEqual(await api.checkShareKey("new-key"), {
+    key: "new-key",
+    available: true,
+  });
+  assert.equal(await api.changeShareKey("new-key"), "new-key");
+  assert.equal(requests[0].url, "/public-token/availability");
+  assert.deepEqual(requests[0].params, { key: "new-key" });
+  assert.equal(requests[1].method, "put");
+  assert.deepEqual(requests[1].data, { key: "new-key" });
+  const { AxiosError } = await import("axios");
+  client.http.defaults.adapter = async (config) => {
+    throw new AxiosError("Conflict", "ERR_BAD_REQUEST", config, undefined, {
+      data: { code: "PUBLIC_TOKEN_TAKEN" },
+      status: 409,
+      statusText: "Conflict",
+      headers: {},
+      config,
+    });
+  };
+  await assert.rejects(
+    api.changeShareKey("taken-key"),
+    (error) => error instanceof AxiosError && error.response?.status === 409,
+  );
+  const shared = createSettingsApi(
+    createApiClient({ baseURL: "/api", publicToken: "guest" }),
+  );
+  await assert.rejects(shared.checkShareKey("new-key"), /read-only/);
+  await assert.rejects(shared.changeShareKey("new-key"), /read-only/);
+});
+
+test("sharing keys have URL-safe characters and bounded lengths", () => {
+  for (const key of ["abc", "My-Key_123", "a".repeat(64)])
+    assert.equal(validateShareKey(key), null);
+  for (const key of [
+    "",
+    "ab",
+    "has space",
+    "bad/key",
+    "한글키",
+    "a".repeat(65),
+  ])
+    assert.ok(validateShareKey(key));
 });

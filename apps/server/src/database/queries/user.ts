@@ -351,8 +351,29 @@ export const getAllAdmins = () => UserModel.find({ admin: true });
 export const setUserAdmin = (userId: string, admin: boolean) =>
   UserModel.findByIdAndUpdate(userId, { admin });
 
-export const setUserPublicToken = (userId: string, token: string | null) =>
-  UserModel.findByIdAndUpdate(userId, { publicToken: token });
+export const publicTokenIndexOptions = {
+  name: "publicToken_unique",
+  unique: true,
+  partialFilterExpression: { publicToken: { $type: "string" } },
+} as const;
+
+let publicTokenIndex: Promise<string> | undefined;
+export const setUserPublicToken = async (
+  userId: string,
+  token: string | null,
+) => {
+  if (token !== null) {
+    // Await the unique index before writing, including on databases with the old nonunique index.
+    publicTokenIndex ??= UserModel.collection
+      .createIndex({ publicToken: 1 }, publicTokenIndexOptions)
+      .catch((error: unknown) => {
+        publicTokenIndex = undefined;
+        throw error;
+      });
+    await publicTokenIndex;
+  }
+  return UserModel.findByIdAndUpdate(userId, { publicToken: token });
+};
 
 export const blacklistArtist = (userId: string, artistId: string) =>
   UserModel.findByIdAndUpdate(userId, {

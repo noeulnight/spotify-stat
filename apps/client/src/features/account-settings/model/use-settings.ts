@@ -49,6 +49,17 @@ export function useSettings() {
     },
     queryClient,
   );
+  const checkShareKey = useMutation(
+    { mutationFn: api.checkShareKey },
+    queryClient,
+  );
+  const changeShareKey = useMutation(
+    {
+      mutationFn: api.changeShareKey,
+      onSuccess: (publicToken) => update((user) => ({ ...user, publicToken })),
+    },
+    queryClient,
+  );
   const revokeShare = useMutation(
     {
       mutationFn: api.revokeShare,
@@ -56,5 +67,13 @@ export function useSettings() {
     },
     queryClient,
   );
-  return { account, save, rename, createShare, revokeShare };
+  return {
+    account,
+    save,
+    rename,
+    createShare,
+    revokeShare,
+    checkShareKey,
+    changeShareKey,
+  };
 }

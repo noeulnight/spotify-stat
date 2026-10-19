@@ -17,3 +17,9 @@ export function validateSettings(settings: Settings) {
   }
   return null;
 }
+
+export function validateShareKey(key: string) {
+  return /^[A-Za-z0-9_-]{3,64}$/.test(key)
+    ? null
+    : "Use 3–64 letters, numbers, hyphens or underscores.";
+}

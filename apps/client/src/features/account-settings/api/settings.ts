@@ -33,6 +33,19 @@ export function createSettingsApi(client: ApiClient) {
       writable();
       return (await client.http.post<string>("/generate-public-token")).data;
     },
+    checkShareKey: async (key: string) => {
+      writable();
+      return (
+        await client.http.get<{ key: string; available: boolean }>(
+          "/public-token/availability",
+          { params: { key } },
+        )
+      ).data;
+    },
+    changeShareKey: async (key: string) => {
+      writable();
+      return (await client.http.put<string>("/public-token", { key })).data;
+    },
     revokeShare: async () => {
       writable();
       await client.http.post("/delete-public-token");

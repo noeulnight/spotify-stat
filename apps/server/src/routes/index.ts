@@ -95,6 +95,42 @@ router.post("/generate-public-token", logged, async (req, res) => {
   res.status(200).send(token);
 });
 
+const publicKey = z.string().regex(/^[A-Za-z0-9_-]{3,64}$/);
+const shareKeyBody = z.object({ key: publicKey });
+
+router.get("/public-token/availability", logged, async (req, res) => {
+  const { user } = req as LoggedRequest;
+  const { key } = validate(req.query, shareKeyBody);
+  const owner = await getUserFromField("publicToken", key, false, false);
+  res.setHeader("Cache-Control", "no-store");
+  res
+    .status(200)
+    .send({ key, available: !owner || owner._id.equals(user._id) });
+});
+
+router.put("/public-token", logged, async (req, res) => {
+  const { user } = req as LoggedRequest;
+  const { key } = validate(req.body, shareKeyBody);
+  const owner = await getUserFromField("publicToken", key, false, false);
+  if (owner && !owner._id.equals(user._id)) {
+    return res.status(409).send({ code: "PUBLIC_TOKEN_TAKEN" });
+  }
+  try {
+    await setUserPublicToken(user._id.toString(), key);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === 11000
+    ) {
+      return res.status(409).send({ code: "PUBLIC_TOKEN_TAKEN" });
+    }
+    throw error;
+  }
+  return res.status(200).send(key);
+});
+
 router.post("/delete-public-token", logged, async (req, res) => {
   const { user } = req as LoggedRequest;
 

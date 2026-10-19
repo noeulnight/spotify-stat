@@ -154,6 +154,10 @@ test("Spotify login sets the session cookie and redirects to the site root", asy
       response.headers.get("location"),
       new URL("/", get("CLIENT_ENDPOINT")).href,
     );
+    const destination = new URL(response.headers.get("location")!);
+    assert.equal(destination.pathname, "/");
+    assert.equal(destination.search, "");
+    assert.equal(destination.hash, "");
     const cookies = response.headers.getSetCookie();
     const session = cookies.find((cookie) => cookie.startsWith("token="));
     assert.ok(session);
