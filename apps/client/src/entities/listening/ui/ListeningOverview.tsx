@@ -1,5 +1,9 @@
 import { MediaInfo } from "./MediaInfo";
-import type { DateId, TrackWithAlbum } from "../api/types";
+import type {
+  DateId,
+  ListeningActivityData,
+  TrackWithAlbum,
+} from "../api/types";
 import { Card, CardContent } from "../../../shared/ui/card";
 import { formatListeningTime } from "../model/format-listening-time";
 import { getTopMonths } from "../model/top-months";
@@ -30,6 +34,7 @@ export function ListeningOverview({
       differents?: number;
       albums?: number;
     };
+    activity?: ListeningActivityData;
     bestPeriod?: { _id: DateId; count: number; total: number }[];
     firstLast?: {
       first?: { played_at: string; track?: TrackWithAlbum };
@@ -39,6 +44,10 @@ export function ListeningOverview({
 }) {
   const months = getTopMonths(stats?.bestPeriod);
   const metrics = [
+    {
+      label: "Last 30 days",
+      value: stats?.activity?.recent.count.toLocaleString("en-US"),
+    },
     {
       label: "Listening time",
       value: formatListeningTime(stats?.total.durationMs),

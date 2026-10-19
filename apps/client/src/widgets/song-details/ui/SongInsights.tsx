@@ -56,9 +56,6 @@ export function SongInsights({ stats }: { stats: TrackStatsResponse }) {
               aria-label="Share of artist plays"
               aria-valuetext={`${share}%`}
             />
-            <p className="text-xs text-muted-foreground">
-              Based on the primary artist of each recorded play.
-            </p>
           </div>
         )}
       </CardContent>

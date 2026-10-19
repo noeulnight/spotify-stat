@@ -207,67 +207,69 @@ export function SongDetails({
             )}
           </nav>
         </header>
-        <div className="grid items-start gap-5 @4xl/song-details:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="grid items-start gap-5 @4xl/song-details:grid-cols-2">
           <div className="min-w-0 space-y-5">
             <ListeningOverview
               dateFormat={dateFormat}
               stats={stats}
               publicToken={publicToken}
             />
-            {stats?.activity && <ListeningActivity activity={stats.activity} />}
             {stats &&
               (stats.activity || stats.artistPlayCount !== undefined) && (
                 <SongInsights stats={stats} />
               )}
             <SongLyrics trackId={track.id} publicToken={publicToken} />
           </div>
-          {stats ? (
-            <Card
-              role="region"
-              aria-labelledby="song-history-title"
-              className="min-w-0"
-            >
-              <CardHeader>
-                <CardTitle>
-                  <h2 id="song-history-title">Recent plays</h2>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table aria-label="Recent song plays">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead scope="col" className="w-12">
-                        #
-                      </TableHead>
-                      <TableHead scope="col">Played at</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {stats.recentHistory?.length ? (
-                      stats.recentHistory.map((play, index) => (
-                        <TableRow key={play._id}>
-                          <TableCell className="text-muted-foreground tabular-nums">
-                            {index + 1}
-                          </TableCell>
-                          <TableCell>
-                            <time dateTime={play.played_at}>
-                              {dateFormat.format(new Date(play.played_at))}
-                            </time>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableStatus colSpan={2} message="No data" />
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No listening history
-            </p>
-          )}
+          <div className="min-w-0 space-y-5">
+            {stats ? (
+              <Card
+                role="region"
+                aria-labelledby="song-history-title"
+                className="min-w-0"
+              >
+                <CardHeader>
+                  <CardTitle>
+                    <h2 id="song-history-title">Recent plays</h2>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table aria-label="Recent song plays">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead scope="col" className="w-12">
+                          #
+                        </TableHead>
+                        <TableHead scope="col">Played at</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stats.recentHistory?.length ? (
+                        stats.recentHistory.map((play, index) => (
+                          <TableRow key={play._id}>
+                            <TableCell className="text-muted-foreground tabular-nums">
+                              {index + 1}
+                            </TableCell>
+                            <TableCell>
+                              <time dateTime={play.played_at}>
+                                {dateFormat.format(new Date(play.played_at))}
+                              </time>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableStatus colSpan={2} message="No data" />
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No listening history
+              </p>
+            )}
+            {stats?.activity && <ListeningActivity activity={stats.activity} />}
+          </div>
         </div>
       </div>
     </PlaylistActions>
