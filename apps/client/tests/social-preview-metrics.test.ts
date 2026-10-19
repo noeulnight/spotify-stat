@@ -1,3 +1,4 @@
+import { formatListeningTime } from "../src/entities/listening";
 import assert from "node:assert/strict";
 import test from "node:test";
 import type {
@@ -6,7 +7,6 @@ import type {
   TrackStatsResponse,
 } from "../src/entities/listening";
 import {
-  formatListeningTime,
   getAlbumMetrics,
   getArtistMetrics,
   getSongMetrics,

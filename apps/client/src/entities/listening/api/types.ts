@@ -112,7 +112,16 @@ export enum CollaborativeMode {
   MINIMA = "minima",
 }
 
+export interface ListeningActivityData {
+  months: { month: string; count: number }[];
+  recent: { count: number; previousCount: number; through: string };
+  listeningDays: number;
+  longestStreak: number;
+  peakDay: { date: string; count: number } | null;
+}
+
 export type ArtistStatsResponse = {
+  activity?: ListeningActivityData;
   artist: Artist;
   bestPeriod: {
     _id: DateId;
@@ -150,6 +159,8 @@ export type ArtistStatsResponse = {
 };
 
 export type TrackStatsResponse = {
+  activity?: ListeningActivityData;
+  artistPlayCount?: number;
   track: Track;
   artist: Artist;
   album: Album;

@@ -1,3 +1,4 @@
+import { SongInsights } from "./SongInsights";
 import { PlaylistActions } from "../../../features/save-to-playlist";
 import { SaveToPlaylist } from "../../../features/save-to-playlist";
 import { SongLyrics } from "../../../features/view-lyrics";
@@ -14,6 +15,7 @@ import {
   AlbumLink,
   ArtistLink,
   ListeningOverview,
+  ListeningActivity,
   TrackPlayButton,
 } from "../../../entities/listening";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../shared/ui/avatar";
@@ -212,6 +214,11 @@ export function SongDetails({
               stats={stats}
               publicToken={publicToken}
             />
+            {stats?.activity && <ListeningActivity activity={stats.activity} />}
+            {stats &&
+              (stats.activity || stats.artistPlayCount !== undefined) && (
+                <SongInsights stats={stats} />
+              )}
             <SongLyrics trackId={track.id} publicToken={publicToken} />
           </div>
           {stats ? (

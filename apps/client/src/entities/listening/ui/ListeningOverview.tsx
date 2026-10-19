@@ -1,6 +1,7 @@
 import { MediaInfo } from "./MediaInfo";
 import type { DateId, TrackWithAlbum } from "../api/types";
 import { Card, CardContent } from "../../../shared/ui/card";
+import { formatListeningTime } from "../model/format-listening-time";
 import { getTopMonths } from "../model/top-months";
 
 function dateLabel(value?: string, format?: Intl.DateTimeFormat) {
@@ -23,7 +24,12 @@ export function ListeningOverview({
   publicToken?: string;
   dateFormat?: Intl.DateTimeFormat;
   stats?: {
-    total: { count: number };
+    total: {
+      count: number;
+      durationMs?: number;
+      differents?: number;
+      albums?: number;
+    };
     bestPeriod?: { _id: DateId; count: number; total: number }[];
     firstLast?: {
       first?: { played_at: string; track?: TrackWithAlbum };
@@ -32,6 +38,20 @@ export function ListeningOverview({
   };
 }) {
   const months = getTopMonths(stats?.bestPeriod);
+  const metrics = [
+    {
+      label: "Listening time",
+      value: formatListeningTime(stats?.total.durationMs),
+    },
+    {
+      label: "Songs listened",
+      value: stats?.total.differents?.toLocaleString("en-US"),
+    },
+    {
+      label: "Albums listened",
+      value: stats?.total.albums?.toLocaleString("en-US"),
+    },
+  ].filter((metric) => metric.value !== undefined);
   return (
     <Card
       aria-label="Listening overview"
@@ -71,6 +91,16 @@ export function ListeningOverview({
             </div>
           )}
         </div>
+        {metrics.length > 0 && (
+          <dl className="grid grid-cols-1 gap-4 border-t pt-5 @sm/listening-overview:grid-cols-2">
+            {metrics.map(({ label, value }) => (
+              <div key={label} className="space-y-1">
+                <dt className="text-sm text-muted-foreground">{label}</dt>
+                <dd className="text-xl font-semibold tabular-nums">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
         <div className="min-w-0 space-y-4 border-t pt-5">
           {[
             { label: "First listened", listen: stats?.firstLast?.first },

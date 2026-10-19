@@ -1,3 +1,4 @@
+import { ArtistSongShare } from "./ArtistSongShare";
 import {
   PlaylistSongRow,
   PlaylistActionsHead,
@@ -15,7 +16,10 @@ import { MediaInfo } from "../../../entities/listening";
 import { PageSkeleton } from "../../../shared/ui/page-skeleton";
 import { Skeleton } from "../../../shared/ui/skeleton";
 import { ArtistActivity } from "./ArtistActivity";
-import { ListeningOverview } from "../../../entities/listening";
+import {
+  ListeningOverview,
+  ListeningActivity,
+} from "../../../entities/listening";
 import {
   Card,
   CardContent,
@@ -199,6 +203,8 @@ export function ArtistDetails({
               stats={stats}
               publicToken={publicToken}
             />
+            {stats?.activity && <ListeningActivity activity={stats.activity} />}
+            {stats && <ArtistSongShare stats={stats} />}
             {stats && <ArtistActivity stats={stats} />}
           </div>
           {!stats ? (

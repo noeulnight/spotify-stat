@@ -12,6 +12,10 @@ import {
   ItemType,
 } from "../database";
 import { getAlbums } from "../database/queries/album";
+import {
+  getListeningActivity,
+  getArtistPlayCount,
+} from "../database/queries/listeningActivity";
 import { isLoggedOrGuest, validate } from "../tools/middleware";
 import { LoggedRequest } from "../tools/types";
 
@@ -47,9 +51,19 @@ router.get("/:id/stats", isLoggedOrGuest, async (req, res) => {
     getTrackFirstAndLastListened(user, track.id),
     bestPeriodOfTrack(user, track.id),
     getTrackRecentHistory(user, track.id),
+    getListeningActivity(user, { id: track.id }),
+    getArtistPlayCount(user, trackArtist),
   ];
-  const [[album], total, [artist], firstLast, bestPeriod, recentHistory] =
-    await Promise.all(promises);
+  const [
+    [album],
+    total,
+    [artist],
+    firstLast,
+    bestPeriod,
+    recentHistory,
+    activity,
+    artistPlayCount,
+  ] = await Promise.all(promises);
   if (!total.count) {
     res.status(200).send({ code: "NEVER_LISTENED" });
     return;
@@ -64,6 +78,8 @@ router.get("/:id/stats", isLoggedOrGuest, async (req, res) => {
       firstLast,
       recentHistory,
       total,
+      activity,
+      artistPlayCount,
     });
 });
 

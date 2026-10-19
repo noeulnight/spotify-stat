@@ -12,6 +12,7 @@ import {
   ItemType,
   getArtistStatsData,
 } from "../database";
+import { getListeningActivity } from "../database/queries/listeningActivity";
 import {
   markStatsRollupsDirty,
   rebuildStatsRollups,
@@ -45,12 +46,15 @@ router.get("/:id/stats", isLoggedOrGuest, async (req, res) => {
     res.status(404).end();
     return;
   }
-  const stats = await getArtistStatsData(user, id);
+  const [stats, activity] = await Promise.all([
+    getArtistStatsData(user, id),
+    getListeningActivity(user, { primaryArtistId: id }),
+  ]);
   if (!stats?.total) {
     res.status(200).send({ code: "NEVER_LISTENED" });
     return;
   }
-  res.status(200).send({ artist, ...stats });
+  res.status(200).send({ artist, ...stats, activity });
 });
 
 router.get("/:id/rank", isLoggedOrGuest, async (req, res) => {
