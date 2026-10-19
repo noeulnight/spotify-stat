@@ -29,7 +29,8 @@ function storeTokenInCookie(
   token: string,
 ) {
   response.cookie("token", token, {
-    sameSite: "strict",
+    // Allow the session cookie on the first navigation back from Spotify.
+    sameSite: "lax",
     httpOnly: true,
     secure: request.secure,
   });

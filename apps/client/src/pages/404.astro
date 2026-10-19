@@ -1,0 +1,10 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import { PageError } from "../shared/ui/page-error";
+
+export const prerender = true;
+---
+
+<AppLayout title="Page not found · Spotistat">
+  <PageError code={404} client:load />
+</AppLayout>

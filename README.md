@@ -1,199 +1,90 @@
-![Build CI](https://github.com/noeulnight/spotify-stat/actions/workflows/nightly.yml/badge.svg)
-![Release CI](https://github.com/noeulnight/spotify-stat/actions/workflows/release.yml/badge.svg)
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=BLAPT49PK9A8G)
+# Spotistat
 
-<p align='center'>
-  <img width="100%" src="https://user-images.githubusercontent.com/17204739/154752226-c2215a51-e20e-4ade-ac63-42c5abb25240.png">
-</p>
+Spotify 청취 기록을 수집하고, 음악 취향과 변화를 보여주는 서비스입니다.
 
-# Your Spotify
+[서비스 열기](https://spotify.lth.so)
 
-**YourSpotify** is a self-hosted application that tracks what you listen and offers you a dashboard to explore statistics about it!
-It's composed of a web server which polls the Spotify API every now and then and a web application on which you can explore your statistics.
+## 주요 기능
 
-# Table of contents
+- 최근 청취 기록, 재생 횟수, 청취 시간과 기간별 통계
+- 곡·앨범·아티스트 순위, 검색과 상세 페이지
+- 곡 가사 조회와 Spotify 재생
+- 중복 확인을 거쳐 변경할 수 있는 공유 키와 읽기 전용 공개 페이지
+- 시간대, 날짜 표시, 테마와 통계 기준 설정
+- Spotify 청취 기록 가져오기와 아티스트 제외 설정
+- 관리자용 계정·서비스 설정
 
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-  - [Using docker](#using-docker-compose)
-  - [Installing locally](#installing-locally-not-recommended)
-  - [Environment](#environment)
-  - [Advanced CORS settings](#advanced-cors-settings)
-- [Creating the Spotify application](#creating-the-spotify-application)
-- [Importing past history](#importing-past-history)
-  - [Supported import methods](#supported-import-methods)
-    - [Privacy data](#privacy-data)
-    - [Full privacy data](#full-privacy-data-recommended)
-  - [Troubleshoot](#troubleshoot)
-- [FAQ](#faq)
-- [External guides](#external-guides)
-- [Contributing](#contributing)
-- [Sponsoring](#sponsoring)
+공유 키를 변경하면 이전 공유 링크는 사용할 수 없습니다.
 
-# Prerequisites
+## 저장소 구성
 
-1. You have to own a Spotify application ID that you can create through their [dashboard](https://developer.spotify.com/dashboard/applications).
-2. You need to provide the **Server** environment the **public** AND **secret** key of the application (cf. [Installation](#installation)).
-3. You need to provide an **authorized** redirect URI to the `docker-compose` file.
+| 경로 | 역할 |
+| --- | --- |
+| `apps/client` | Astro·React 프런트엔드. shadcn/ui, TanStack Query와 Axios 사용 |
+| `apps/server` | Express API, Spotify 연동, 청취 기록 수집과 통계 계산 |
+| `apps/dev` | 공통 개발 도구 설정 |
 
-> A tutorial is available at the end of this readme.
+데이터는 MongoDB에 저장합니다. 프런트엔드는 Astro 라우팅과 FSD 의존성 규칙을 따릅니다.
 
-# Installation
+## 로컬 개발
 
-## Using `docker-compose`
+Node.js 26과 pnpm 11.9.0, MongoDB, Spotify 개발자 앱이 필요합니다. Spotify 앱은 [개발자 대시보드](https://developer.spotify.com/dashboard)에서 설정합니다.
 
-Follow the [docker-compose-example.yml](https://github.com/noeulnight/spotify-stat/blob/master/docker-compose-example.yml) to host your application through docker.
-
-```yml
-services:
-  server:
-    image: ghcr.io/noeulnight/spotify-stat-server
-    restart: always
-    ports:
-      - "8080:8080"
-    links:
-      - mongo
-    depends_on:
-      - mongo
-    environment:
-      API_ENDPOINT: http://localhost:8080 # This MUST be included as a valid URL in the spotify dashboard (see below)
-      CLIENT_ENDPOINT: http://localhost:3000
-      SPOTIFY_PUBLIC: __spotify_client_id__
-      SPOTIFY_SECRET: __spotify_client_secret__
-
-  web:
-    image: ghcr.io/noeulnight/spotify-stat-client
-    restart: always
-    ports:
-      - "3000:3000"
-    environment:
-      API_ENDPOINT: http://localhost:8080
-
-  mongo:
-    container_name: mongo
-    image: mongo:8
-    volumes:
-      - ./spotify-stat-db:/data/db
-
+```sh
+pnpm install --frozen-lockfile
 ```
 
-## Installing locally (not recommended)
+### 백엔드
 
-You can follow the instructions [here](https://github.com/noeulnight/spotify-stat/blob/master/LOCAL_INSTALL.md). Note that you will still have to do the steps below.
+`apps/server/.env`에 다음 값을 설정합니다. Spotify 앱 키는 실제 값으로 교체합니다.
 
-## Environment
+```dotenv
+MONGO_ENDPOINT=mongodb://127.0.0.1:27017/spotify-stat
+CLIENT_ENDPOINT=http://127.0.0.1:4321
+API_ENDPOINT=http://127.0.0.1:8080
+SPOTIFY_PUBLIC=your_spotify_client_id
+SPOTIFY_SECRET=your_spotify_client_secret
+TIMEZONE=Asia/Seoul
+```
 
-| Key | Default value (if any) | Description |
-| :--- | :--- | :--- |
-| CLIENT_ENDPOINT       | REQUIRED | The endpoint of your web application |
-| API_ENDPOINT          | REQUIRED | The endpoint of your server |
-| SPOTIFY_PUBLIC        | REQUIRED | The public key of your Spotify application (cf [Creating the Spotify Application](#creating-the-spotify-application)) |
-| SPOTIFY_SECRET        | REQUIRED | The secret key of your Spotify application (cf [Creating the Spotify Application](#creating-the-spotify-application)) |
-| TIMEZONE              | Europe/Paris | The timezone of your stats, only affects read requests since data is saved with UTC time |
-| MONGO_ENDPOINT        | mongodb://mongo:27017/spotify-stat | The endpoint of the Mongo database, where **mongo** is the name of your service in the compose file |
-| PROMETHEUS_USERNAME             | _not defined_ | Prometheus basic auth username (see [here](https://github.com/noeulnight/spotify-stat/tree/master/apps/server#prometheus)) |
-| PROMETHEUS_PASSWORD             | _not defined_ | Prometheus basic auth password |
-| LOG_LEVEL             | info | The log level, debug is useful if you encouter any bugs |
-| CORS                  | _not defined_ | List of comma-separated origin allowed (not required; defaults to CLIENT_ENDPOINT) |
-| COOKIE_VALIDITY_MS    | 1h | Validity time of the authentication cookie, following [this pattern](https://github.com/vercel/ms) |
-| MAX_IMPORT_CACHE_SIZE | Infinite | The maximum element in the cache when importing data from an outside source, more cache means less requests to Spotify, resulting in faster imports |
-| MONGO_NO_ADMIN_RIGHTS | false | Do not ask for admin right on the Mongo database |
-| HOST                  | 0.0.0.0 | The address the server listens on |
-| PORT                  | 8080 | The port of the server, **do not** modify if you're using docker |
-| FRAME_ANCESTORS       | _not defined_ | Sites allowed to frame the website, comma separated list of URLs (`i-want-a-security-vulnerability-and-want-to-allow-all-frame-ancestors` to allow every website) |
+Spotify 앱의 Redirect URI에는 `http://127.0.0.1:8080/oauth/spotify/callback`을 등록합니다.
 
-## Advanced CORS settings
+```sh
+pnpm --filter @spotify-stat/server build
+cd apps/server
+node --env-file=.env build/index.js --migrate
+node --env-file=.env build/index.js
+```
 
-**Manually specifying CORS configuration is not required for typical deployments.**  
-99.9% of users do not need to worry about this, it is handled automatically.
+기본 API 포트는 `8080`입니다. `.env` 파일은 저장소에 커밋하지 않습니다.
 
-If your use case requires the backend to be used from multiple frontend origins, you can manually adjust the `CORS` variable.
-For example, a value of `origin1,origin2` will allow `origin1` and `origin2`.
+### 프런트엔드
 
-# Creating the Spotify Application
+`apps/client/.env`에 다음 값을 설정합니다.
 
-For **YourSpotify** to work you need to provide a Spotify application **public** AND **secret** to the server environment.
-To do so, you need to create a **Spotify application** [here](https://developer.spotify.com/dashboard/applications).
+```dotenv
+PUBLIC_API_BASE_URL=/api
+```
 
-1. Click on **Create app**.
-2. Fill out all the information.
-3. Set the redirect URI, corresponding to your **server** location on the internet (or your local network) adding the suffix **/oauth/spotify/callback** (**/api/oauth/spotify/callback** if using the [linuxserver](https://github.com/linuxserver/docker-your_spotify) image).
-- i.e: `http://localhost:8080/oauth/spotify/callback` or `http://home.mydomain.com/spotify-stat-backend/oauth/spotify/callback`
-4. Check **Web API**
-5. Check **I understand and agree**
-6. Hit **Settings** at the top right corner
-7. Copy the **public** and the **secret** key into your `docker-compose` file under the name of `SPOTIFY_PUBLIC` and `SPOTIFY_SECRET`
-   respectively.
-8. Once you have created your application, Spotify wants you to register the users that will be able to access the application. (You don't need to do that for the account that created the application)
-   1. Click the **User Management** button
-   2. Enter the required information, a name and the email the user's Spotify account has been created with.
-   3. (Optional) You can **Request extension** if you do not want to register the users by hand.
+저장소 루트에서 실행합니다.
 
-# Importing past history
+```sh
+pnpm --filter spotistat exec astro dev --background
+pnpm --filter spotistat exec astro dev status
+pnpm --filter spotistat exec astro dev logs
+pnpm --filter spotistat exec astro dev stop
+```
 
-By default, **YourSpotify** will only retrieve data for the past 24 hours once registered. This is a technical limitation. However, you can import previous data by two ways.
+개발 주소는 `http://127.0.0.1:4321`입니다. `/api` 요청은 기본적으로 로컬 백엔드로 전달됩니다.
 
-The import process uses cache to limit requests to the Spotify API. By default, the cache size is unlimited, but you can limit is with the `MAX_IMPORT_CACHE_SIZE` env variable in the **server**.
+프런트엔드 구조와 검증 명령은 [클라이언트 README](./apps/client/README.md)에 있습니다.
 
-## Supported import methods
+## 운영 배포
 
-### Privacy data
+버전 태그를 올리면 GitHub Actions가 프런트엔드와 백엔드의 amd64·arm64 이미지를 GHCR에 발행합니다. ArgoCD가 클러스터에 배포합니다. 루트·클라이언트·서버의 `package.json` 버전은 태그와 같아야 합니다.
 
-> Takes a maximum of 5 days.
-> Only gets you the last year of history.
+운영 프런트엔드는 `PUBLIC_API_BASE_URL=/api`, `SITE_URL=https://spotify.lth.so`로 빌드합니다. API와 OAuth는 같은 서비스 주소의 `/api` 경로를 사용합니다.
 
-- Request your **privacy data** at Spotify to have access to your history for the past year [here](https://www.spotify.com/us/account/privacy/).
-- Head to the **Settings** page and choose the **Account data** method.
-- Input your files starting with `StreamingHistoryX.json`.
-- Start your import.
+## 라이선스
 
-### Full privacy data (recommended)
-
-> Takes a maximum of 30 days.
-> Gets you the whole history since the creation of your account.
-
-- Request your **Full privacy data** to have access to your history data since the creation of the account [here](https://www.spotify.com/us/account/privacy/).
-- Head to the **Settings** page and choose the **Extended streaming history** method.
-- Input your files starting with `Streaming_History_Audio_YYYY-YYYY_X.json`.
-- Start your import.
-
-## Troubleshoot
-
-An import can fail:
-- If the server reboots.
-- If a request fails 10 times in a row.
-
-A failed import can be retried in the **Settings** page. Be sure to clean your failed imports if you do not want to retry it as it will remove the files used for it.
-
-It is safer to import data at account creation. Though **YourSpotify** detects duplicates, some may still be inserted.
-
-# FAQ
-
-> How can I block new registrations?
-
-From an admin account, go to the **Settings** page and hit the **Disable new registrations** button.
-
-> Songs don't seem to synchronize anymore.
-
-This can happen if you revoked access on your Spotify account. To re-sync the songs, go to settings and hit the **Relog to Spotify** button.
-
-> The web application is telling me it cannot retrieve global preferences.
-
-This means that your web application can't connect to the backend. Check that your **API_ENDPOINT** env variable is reachable from the device you're using the platform from.
-
-> A specific user does not use the application in the same timezone as the server, how can I set a specific timezone for him?
-
-Any user can set his proper timezone in the settings, it will be used for any computed statistics. The timezone of the device will be used for everything else, such as song history.
-
-# External guides
-
-- [BreadNet](https://breadnet.co.uk/your-spotify-2022) installation tutorial
-
-# Contributing
-
-If you have any issue or any idea that could make the project better, feel free to open an [issue](https://github.com/noeulnight/spotify-stat/issues/new/choose). I'd love to hear about new ideas or bugs you are encountering.
-
-# Sponsoring
-
-I work on this project on my spare time and try to fix issues as soon as I can. If you feel generous and think this project and my investment are worth a few cents, you can consider sponsoring it with the button on the right, many thanks.
-
+[Your Spotify](https://github.com/Yooooomi/your_spotify)를 기반으로 개발했습니다. [GPL-3.0](./LICENSE) 라이선스를 따릅니다.

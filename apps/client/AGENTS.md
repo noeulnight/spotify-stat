@@ -55,16 +55,15 @@ Consult these guides before working on related tasks:
 - 서버 상태는 `@tanstack/react-query`를 사용한다. HTTP 요청은 `axios`를 사용한다.
 - 기능별 API 함수와 쿼리 정의는 해당 `entities` 또는 `features` 슬라이스의 `api`에 둔다.
 - 공통 HTTP 설정만 `shared/api`에 둔다. 도메인 규칙을 넣지 않는다.
-- Material 3 UI는 공식 `@material/web` 컴포넌트와 기본 스타일을 사용한다. 임의의 CSS로 Material 컴포넌트를 흉내 내지 않는다.
+- UI는 `src/shared/ui`의 기존 shadcn/ui 컴포넌트를 우선 재사용한다.
 - 화면, 예시 데이터, Provider, 공통 래퍼는 실제 요청에 필요할 때만 만든다.
 - 변경을 완료하기 전에 레이어 의존성과 공개 API 사용을 확인하고 빌드를 실행한다. 규칙 위반은 완료로 처리하지 않는다.
 
 
-## 필수 디자인 기준: Google Material 3 우선 적용
+## UI 구성 기준
 
-- UI 설계와 구현은 [Google Material 3](https://m3.material.io/)를 우선 기준으로 삼는다.
-- 공식 `@material/web` 컴포넌트와 기본 스타일을 먼저 사용한다. 사용자가 별도로 요청하지 않으면 임의의 디자인으로 대체하지 않는다.
-- 색상만 비슷하게 적용하는 것으로 Material 적용을 완료했다고 판단하지 않는다. 타이포그래피, 형태, 간격, 상태 표현과 접근성도 공식 지침을 따른다.
-- 공식 컴포넌트가 없는 영역은 Material 3 지침에 맞춰 구현한다. 기존 컴포넌트를 임의 CSS로 흉내 내지 않는다.
+- 기존 shadcn/ui 컴포넌트와 전역 테마를 사용한다.
+- 새 UI는 `src/shared/ui`의 구성요소를 조합해 구현한다.
+- 접근성, 입력 검증, 로딩 상태와 오류 상태를 함께 처리한다.
 - 테마 적용 요청만으로 새 화면, 예시 데이터, 장식용 콘텐츠나 기능을 추가하지 않는다.
 - 재구현 범위와 페이지별 구성은 `docs/frontend-plan.md`를 참고한다. 계획에 있다는 이유만으로 구현을 시작하지 않고 사용자가 요청한 범위만 구현한다.

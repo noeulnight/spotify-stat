@@ -163,6 +163,7 @@ test("Spotify login sets the session cookie and redirects to the site root", asy
     assert.ok(session);
     assert.match(session, /Path=\//);
     assert.match(session, /HttpOnly/);
+    assert.match(session, /SameSite=Lax/);
     const token = session.split(";")[0]!.slice("token=".length);
     assert.equal((jwt.verify(token, key) as jwt.JwtPayload).userId, id);
     assert.ok(cookies.some((cookie) => cookie.startsWith("oauth=;")));

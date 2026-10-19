@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useId, useState } from "react";
 import { isAxiosError } from "axios";
+import { Button } from "../../../shared/ui/button";
+import { Input } from "../../../shared/ui/input";
 import type { useSettings } from "../model/use-settings";
 import { validateShareKey } from "../model/validation";
 
@@ -13,14 +15,7 @@ export function ShareKeyEditor({
   disabled: boolean;
 }) {
   const [key, setKey] = useState(currentKey);
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    void Promise.all([
-      import("@material/web/textfield/outlined-text-field.js"),
-      import("@material/web/button/filled-button.js"),
-      import("@material/web/button/outlined-button.js"),
-    ]).then(() => setReady(true));
-  }, []);
+  const fieldId = useId();
   const validation = validateShareKey(key);
   const checked = state.checkShareKey.data;
   const saveConflict =
@@ -37,48 +32,54 @@ export function ShareKeyEditor({
     : null;
   return (
     <form
-      className="space-y-3 [--md-ref-typeface-brand:var(--font-sans)] [--md-ref-typeface-plain:var(--font-sans)]"
+      className="space-y-3"
       aria-label="Change sharing key"
-      aria-busy={!ready || busy}
+      aria-busy={busy}
       onSubmit={(event) => {
         event.preventDefault();
         if (available && !validation && changed && !busy)
           state.changeShareKey.mutate(key);
       }}
     >
-      <md-outlined-text-field
-        className="w-full"
-        label="Sharing key"
+      <label htmlFor={fieldId} className="text-sm font-medium">
+        Sharing key
+      </label>
+      <Input
+        id={fieldId}
         value={key}
         required
+        minLength={3}
         maxLength={64}
-        disabled={!ready || busy}
-        supporting-text="3–64 letters, numbers, hyphens or underscores. Keys are case-sensitive."
-        onInput={(event) => {
-          setKey(
-            (event.currentTarget as HTMLElement & { value: string }).value,
-          );
+        disabled={busy}
+        aria-invalid={!!((changed && validation) || conflict || saveConflict)}
+        aria-describedby={`${fieldId}-hint`}
+        onChange={(event) => {
+          setKey(event.target.value);
           state.checkShareKey.reset();
           state.changeShareKey.reset();
         }}
       />
+      <p id={`${fieldId}-hint`} className="text-xs text-muted-foreground">
+        3–64 letters, numbers, hyphens or underscores. Keys are case-sensitive.
+      </p>
       <div className="flex flex-wrap gap-2">
-        <md-outlined-button
+        <Button
+          variant="outline"
           type="button"
-          disabled={!ready || busy || !changed || !!validation}
+          disabled={busy || !changed || !!validation}
           onClick={() => {
             state.changeShareKey.reset();
             state.checkShareKey.mutate(key);
           }}
         >
           {state.checkShareKey.isPending ? "Checking…" : "Check availability"}
-        </md-outlined-button>
-        <md-filled-button
+        </Button>
+        <Button
           type="submit"
-          disabled={!ready || busy || !changed || !available || !!validation}
+          disabled={busy || !changed || !available || !!validation}
         >
           {state.changeShareKey.isPending ? "Saving…" : "Save sharing key"}
-        </md-filled-button>
+        </Button>
       </div>
       {changed && validation && (
         <p role="alert" className="text-sm">
