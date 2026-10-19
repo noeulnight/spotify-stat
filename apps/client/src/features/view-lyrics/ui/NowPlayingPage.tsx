@@ -6,14 +6,20 @@ import { Button } from "../../../shared/ui/button";
 import { Skeleton } from "../../../shared/ui/skeleton";
 import { LyricsBody, PlaybackInfo } from "./LyricsViewer";
 
-export function NowPlayingPage({ publicToken }: { publicToken?: string }) {
+export function NowPlayingPage({
+  publicToken,
+  floating = false,
+}: {
+  publicToken?: string;
+  floating?: boolean;
+}) {
   const { client, queryClient } = useApiRuntime(publicToken);
   const account = useAccount(client, queryClient);
   const playback = useQuery(
     {
       ...createListeningQueries(client).currentlyPlaying(),
       enabled: account.data?.status === true,
-      refetchIntervalInBackground: false,
+      refetchIntervalInBackground: floating,
     },
     queryClient,
   );
@@ -55,7 +61,11 @@ export function NowPlayingPage({ publicToken }: { publicToken?: string }) {
         </p>
       ) : current ? (
         <>
-          <PlaybackInfo playback={current} publicToken={publicToken} />
+          <PlaybackInfo
+            playback={current}
+            publicToken={publicToken}
+            showWindowButton={!floating}
+          />
           <LyricsBody
             key={current.track.id}
             playback={current}

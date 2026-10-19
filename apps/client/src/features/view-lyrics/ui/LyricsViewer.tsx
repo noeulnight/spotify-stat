@@ -15,6 +15,7 @@ import { useIsMobile } from "../../../shared/lib/use-mobile";
 import { useSidebar } from "../../../shared/ui/sidebar";
 import { ResizablePlaybackPanel } from "./ResizablePlaybackPanel";
 import { LyricsContent } from "./LyricsContent";
+import { LyricsWindowButton } from "./LyricsWindowButton";
 
 export function LyricsViewer({
   playback,
@@ -124,26 +125,33 @@ export function LyricsViewer({
 export function PlaybackInfo({
   playback,
   publicToken,
+  showWindowButton = true,
 }: {
   playback: CurrentlyPlayingResponse;
   publicToken?: string;
+  showWindowButton?: boolean;
 }) {
   return (
     <div className="shrink-0 space-y-3 px-4 pb-4">
-      <MediaInfo
-        marquee
-        trackId={playback.track.id}
-        albumId={playback.album.id}
-        title={playback.track.name}
-        imageUrl={playback.album.imageUrl ?? undefined}
-        publicToken={publicToken}
-        subTitle={playback.artists.map((artist, index) => (
-          <span key={artist.id}>
-            {index > 0 && ", "}
-            <ArtistLink artist={artist} publicToken={publicToken} />
-          </span>
-        ))}
-      />
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <MediaInfo
+            marquee
+            trackId={playback.track.id}
+            albumId={playback.album.id}
+            title={playback.track.name}
+            imageUrl={playback.album.imageUrl ?? undefined}
+            publicToken={publicToken}
+            subTitle={playback.artists.map((artist, index) => (
+              <span key={artist.id}>
+                {index > 0 && ", "}
+                <ArtistLink artist={artist} publicToken={publicToken} />
+              </span>
+            ))}
+          />
+        </div>
+        {showWindowButton && <LyricsWindowButton publicToken={publicToken} />}
+      </div>
       <PlaybackProgress playback={playback} />
       {!publicToken && <PlaybackControls isPlaying={playback.isPlaying} />}
     </div>

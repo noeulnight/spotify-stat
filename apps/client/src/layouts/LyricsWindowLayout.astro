@@ -1,0 +1,36 @@
+---
+import "../app/styles/global.css";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Lyrics · Spotistat</title>
+    <script is:inline>
+      (() => {
+        const media = matchMedia("(prefers-color-scheme: dark)");
+        const applyTheme = () => {
+          let theme = "system";
+          try {
+            theme = localStorage.getItem("spotistat-theme") || "system";
+          } catch {}
+          const dark =
+            theme === "dark" || (theme === "system" && media.matches);
+          document.documentElement.classList.toggle("dark", dark);
+          document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        };
+        applyTheme();
+        addEventListener("storage", applyTheme);
+        media.addEventListener("change", applyTheme);
+      })();
+    </script>
+  </head>
+  <body class="flex h-dvh min-h-0 flex-col overflow-hidden py-4">
+    <main class="flex min-h-0 flex-1 flex-col" aria-label="Lyrics window">
+      <slot />
+    </main>
+  </body>
+</html>

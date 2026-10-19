@@ -1,0 +1,15 @@
+---
+import LyricsWindowLayout from "../../../layouts/LyricsWindowLayout.astro";
+import { NowPlaying } from "../../../widgets/now-playing";
+
+export const prerender = false;
+const publicToken = Astro.params.token!;
+---
+
+<LyricsWindowLayout>
+  <NowPlaying floating publicToken={publicToken} client:only="react">
+    <p slot="fallback" role="status" class="px-4 text-sm text-muted-foreground">
+      Loading playback
+    </p>
+  </NowPlaying>
+</LyricsWindowLayout>
