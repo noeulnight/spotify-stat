@@ -19,7 +19,7 @@ export function LyricsContent({
   trackId: string;
   playback?: CurrentlyPlayingResponse | null;
   publicToken?: string;
-  mode?: "panel" | "preview" | "full";
+  mode?: "panel" | "preview" | "full" | "floating";
 }) {
   const { client, queryClient } = useApiRuntime(publicToken);
   const lyrics = useQuery(
@@ -65,7 +65,7 @@ export function LyricsContent({
       trackId={trackId}
       playback={playback}
       mode={mode}
-      className={mode === "panel" ? "flex-1" : ""}
+      className={mode === "panel" || mode === "floating" ? "flex-1" : ""}
     />
   );
 }

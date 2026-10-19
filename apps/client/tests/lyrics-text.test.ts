@@ -19,14 +19,19 @@ const playback = {
   artists: [],
 };
 
-test("panel, preview and full lyrics keep the same rows and active line", () => {
-  const render = (mode: "panel" | "preview" | "full") =>
+test("panel, preview, full and floating lyrics keep the same rows and active line", () => {
+  const render = (mode: "panel" | "preview" | "full" | "floating") =>
     renderToStaticMarkup(
       createElement(LyricsText, { lyrics, trackId: "song", playback, mode }),
     );
   const full = render("full");
   const preview = render("preview");
   const panel = render("panel");
+  const floating = render("floating");
+  assert.equal(
+    floating.slice(floating.indexOf('<span role="list"')),
+    full.slice(full.indexOf('<span role="list"')),
+  );
   assert.equal(
     panel.slice(panel.indexOf('<span role="list"')),
     full.slice(full.indexOf('<span role="list"')),

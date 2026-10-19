@@ -33,9 +33,12 @@ export function ListeningOverview({
 }) {
   const months = getTopMonths(stats?.bestPeriod);
   return (
-    <Card aria-label="Listening overview" className="min-w-0">
+    <Card
+      aria-label="Listening overview"
+      className="@container/listening-overview min-w-0"
+    >
       <CardContent className="space-y-5">
-        <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-6">
+        <div className="grid grid-cols-1 gap-6 @sm/listening-overview:grid-cols-[auto_minmax(0,1fr)]">
           <div className="space-y-2">
             <h2 className="text-sm font-medium text-muted-foreground">
               Total plays
@@ -75,7 +78,7 @@ export function ListeningOverview({
           ].map(({ label, listen }) => (
             <div
               key={label}
-              className="grid min-w-0 grid-cols-[6rem_minmax(0,1fr)] items-center gap-3"
+              className="grid min-w-0 grid-cols-1 items-center gap-3 @sm/listening-overview:grid-cols-[6rem_minmax(0,1fr)]"
             >
               <h2 className="text-sm font-medium text-muted-foreground">
                 {label}

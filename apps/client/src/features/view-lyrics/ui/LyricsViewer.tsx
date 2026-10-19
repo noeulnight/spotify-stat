@@ -7,6 +7,7 @@ import {
   PlaybackProgress,
   PlaybackControls,
   ArtistLink,
+  SongLink,
   type CurrentlyPlayingResponse,
 } from "../../../entities/listening";
 import { Button, buttonVariants } from "../../../shared/ui/button";
@@ -125,35 +126,58 @@ export function LyricsViewer({
 export function PlaybackInfo({
   playback,
   publicToken,
-  showWindowButton = true,
+  floating = false,
 }: {
   playback: CurrentlyPlayingResponse;
   publicToken?: string;
-  showWindowButton?: boolean;
+  floating?: boolean;
 }) {
+  const artists = playback.artists.map((artist, index) => (
+    <span key={artist.id}>
+      {index > 0 && ", "}
+      <ArtistLink artist={artist} publicToken={publicToken} />
+    </span>
+  ));
   return (
-    <div className="shrink-0 space-y-3 px-4 pb-4">
-      <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <MediaInfo
-            marquee
-            trackId={playback.track.id}
-            albumId={playback.album.id}
-            title={playback.track.name}
-            imageUrl={playback.album.imageUrl ?? undefined}
-            publicToken={publicToken}
-            subTitle={playback.artists.map((artist, index) => (
-              <span key={artist.id}>
-                {index > 0 && ", "}
-                <ArtistLink artist={artist} publicToken={publicToken} />
-              </span>
-            ))}
-          />
+    <div
+      className={
+        floating
+          ? "lyrics-window-player space-y-3"
+          : "shrink-0 space-y-3 px-4 pb-4"
+      }
+    >
+      {floating ? (
+        <div className="min-w-0">
+          <p className="truncate text-lg font-semibold">
+            <SongLink
+              song={{ id: playback.track.id, name: playback.track.name }}
+              publicToken={publicToken}
+            />
+          </p>
+          <p className="truncate text-sm text-muted-foreground">{artists}</p>
         </div>
-        {showWindowButton && <LyricsWindowButton publicToken={publicToken} />}
-      </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <MediaInfo
+              marquee
+              trackId={playback.track.id}
+              albumId={playback.album.id}
+              title={playback.track.name}
+              imageUrl={playback.album.imageUrl ?? undefined}
+              publicToken={publicToken}
+              subTitle={artists}
+            />
+          </div>
+          <LyricsWindowButton publicToken={publicToken} />
+        </div>
+      )}
       <PlaybackProgress playback={playback} />
-      {!publicToken && <PlaybackControls isPlaying={playback.isPlaying} />}
+      {!publicToken && (
+        <div className={floating ? "lyrics-window-controls" : undefined}>
+          <PlaybackControls isPlaying={playback.isPlaying} />
+        </div>
+      )}
     </div>
   );
 }
@@ -161,16 +185,21 @@ export function PlaybackInfo({
 export function LyricsBody({
   playback,
   publicToken,
+  floating = false,
 }: {
   playback: CurrentlyPlayingResponse;
   publicToken?: string;
+  floating?: boolean;
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 py-4">
+    <div
+      className={`flex min-h-0 flex-1 flex-col overflow-hidden ${floating ? "px-4" : "px-6 py-4"}`}
+    >
       <LyricsContent
         trackId={playback.track.id}
         playback={playback}
         publicToken={publicToken}
+        mode={floating ? "floating" : "panel"}
       />
     </div>
   );

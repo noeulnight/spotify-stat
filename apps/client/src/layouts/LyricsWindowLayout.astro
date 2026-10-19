@@ -28,9 +28,44 @@ import "../app/styles/global.css";
       })();
     </script>
   </head>
-  <body class="flex h-dvh min-h-0 flex-col overflow-hidden py-4">
+  <body class="lyrics-window flex h-dvh min-h-0 flex-col overflow-hidden">
     <main class="flex min-h-0 flex-1 flex-col" aria-label="Lyrics window">
       <slot />
     </main>
   </body>
 </html>
+
+<style is:global>
+  .lyrics-window .lyrics-text {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 min(48px, 12%),
+      #000 calc(100% - min(48px, 12%)),
+      transparent
+    );
+  }
+
+  .lyrics-window-player {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    padding: 32px 20px 16px;
+    background: linear-gradient(to bottom, transparent, var(--background) 32px);
+  }
+
+  .lyrics-window-controls {
+    display: none;
+  }
+
+  .lyrics-window:hover .lyrics-window-controls,
+  .lyrics-window:has(:focus-visible) .lyrics-window-controls {
+    display: block;
+  }
+
+  @media (forced-colors: active) {
+    .lyrics-window .lyrics-text {
+      mask-image: none;
+    }
+  }
+</style>

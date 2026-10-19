@@ -81,9 +81,9 @@ export function SongDetails({
   if (!track) return null;
   return (
     <PlaylistActions>
-      <div className="space-y-6">
-        <header className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:pr-20">
-          <div className="group/media-cover relative size-24 shrink-0 sm:size-32">
+      <div className="@container/song-details space-y-6">
+        <header className="relative flex flex-col gap-4 @xl/song-details:flex-row @xl/song-details:items-center @xl/song-details:pr-20">
+          <div className="group/media-cover relative size-24 shrink-0 @xl/song-details:size-32">
             <Avatar className="size-full rounded-md after:rounded-md">
               <AvatarImage
                 src={album?.images?.[0]?.url}
@@ -205,7 +205,7 @@ export function SongDetails({
             )}
           </nav>
         </header>
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="grid items-start gap-5 @4xl/song-details:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <div className="min-w-0 space-y-5">
             <ListeningOverview
               dateFormat={dateFormat}

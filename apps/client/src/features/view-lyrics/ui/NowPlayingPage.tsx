@@ -28,9 +28,16 @@ export function NowPlayingPage({
   const loading =
     account.isPending || (account.data?.status && playback.isPending);
   const current = account.data?.status ? playback.data : undefined;
+  const playbackInfo = current ? (
+    <PlaybackInfo
+      playback={current}
+      publicToken={publicToken}
+      floating={floating}
+    />
+  ) : null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="relative flex min-h-0 flex-1 flex-col">
       {loading ? (
         <div
           role="status"
@@ -61,16 +68,14 @@ export function NowPlayingPage({
         </p>
       ) : current ? (
         <>
-          <PlaybackInfo
-            playback={current}
-            publicToken={publicToken}
-            showWindowButton={!floating}
-          />
+          {!floating && playbackInfo}
           <LyricsBody
             key={current.track.id}
             playback={current}
             publicToken={publicToken}
+            floating={floating}
           />
+          {floating && playbackInfo}
         </>
       ) : (
         <p className="flex flex-1 items-center justify-center text-muted-foreground">

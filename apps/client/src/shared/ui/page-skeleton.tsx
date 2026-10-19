@@ -17,15 +17,15 @@ export function PageSkeleton({
       role="status"
       aria-label="Loading"
       aria-busy="true"
-      className="space-y-6"
+      className="@container/page-skeleton space-y-6"
     >
       <span className="sr-only">Loading</span>
       <div aria-hidden="true" className="space-y-6">
         {layout === "detail" ? (
           <>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-4 @xl/page-skeleton:flex-row @xl/page-skeleton:items-center">
               <Skeleton
-                className={`size-24 shrink-0 sm:size-32 ${round ? "rounded-full" : "rounded-md"}`}
+                className={`size-24 shrink-0 @xl/page-skeleton:size-32 ${round ? "rounded-full" : "rounded-md"}`}
               />
               <div className="w-full space-y-3">
                 <Skeleton className="h-9 w-72 max-w-full" />
@@ -33,7 +33,7 @@ export function PageSkeleton({
                 <Skeleton className="h-4 w-24" />
               </div>
             </div>
-            <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <div className="grid items-start gap-5 @4xl/page-skeleton:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
               <Card>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-2 gap-6">

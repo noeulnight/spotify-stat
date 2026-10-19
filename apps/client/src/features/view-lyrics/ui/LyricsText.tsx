@@ -26,7 +26,7 @@ export function LyricsText({
   lyrics: TrackLyrics;
   trackId: string;
   playback?: CurrentlyPlayingResponse | null;
-  mode?: "panel" | "preview" | "full";
+  mode?: "panel" | "preview" | "full" | "floating";
   className?: string;
 }) {
   const lines = useMemo(

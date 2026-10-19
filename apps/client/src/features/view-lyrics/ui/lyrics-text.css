@@ -37,6 +37,10 @@
   padding-bottom: var(--lyrics-follow-end-space, 12px);
 }
 
+.lyrics-text[data-mode="floating"] .lyrics-text__list {
+  padding-block: 20px;
+}
+
 .lyrics-text__line,
 .lyrics-text__plain {
   display: block;
