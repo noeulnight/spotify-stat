@@ -10,6 +10,7 @@ export interface User {
   lastTimestamp: number;
   tracks?: string[];
   settings: {
+    recommendationsEnabled?: boolean;
     historyLine: boolean;
     preferredStatsPeriod: string;
     nbElements: number;

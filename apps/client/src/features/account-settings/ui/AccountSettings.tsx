@@ -52,6 +52,7 @@ function SettingsForm({
 }) {
   const [name, setName] = useState(user.username);
   const [draft, setDraft] = useState<Settings>(() => ({
+    recommendationsEnabled: user.settings.recommendationsEnabled ?? true,
     historyLine: user.settings.historyLine ?? false,
     preferredStatsPeriod: user.settings.preferredStatsPeriod ?? "month",
     nbElements: user.settings.nbElements ?? 10,
@@ -287,6 +288,22 @@ function SettingsForm({
                     ),
                   )}
                 </datalist>
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <label htmlFor="settings-recommendations">
+                  Song recommendations
+                </label>
+                <SettingsSelect
+                  id="settings-recommendations"
+                  value={String(draft.recommendationsEnabled)}
+                  onChange={(value) =>
+                    field("recommendationsEnabled", value === "true")
+                  }
+                  items={[
+                    { value: "true", label: "Enabled" },
+                    { value: "false", label: "Disabled" },
+                  ]}
+                />
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <label htmlFor="settings-timezone">Time zone</label>

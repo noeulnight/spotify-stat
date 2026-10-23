@@ -43,6 +43,7 @@ router.post("/logout", async (_, res) => {
 });
 
 const settingsSchema = z.object({
+  recommendationsEnabled: z.boolean().optional(),
   historyLine: z.string().transform(toBoolean).optional(),
   preferredStatsPeriod: z.enum(["day", "week", "month", "year"]).optional(),
   nbElements: z.preprocess(

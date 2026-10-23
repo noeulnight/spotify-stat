@@ -1,3 +1,4 @@
+import { SongRecommendationBanner } from "../../../features/song-recommendations";
 import { PlaylistActions } from "../../../features/save-to-playlist";
 import { HomeSectionLink } from "./HomeSectionLink";
 import { Button } from "../../../shared/ui/button";
@@ -36,6 +37,7 @@ export function Home({ publicToken }: { publicToken?: string }) {
   return (
     <PlaylistActions>
       <div className="@container/home space-y-5">
+        {publicToken && <SongRecommendationBanner publicToken={publicToken} />}
         <HomeOverview home={home} publicToken={publicToken} />
         <div className="grid items-start gap-5 @min-[56rem]/home:grid-cols-2">
           <div className="contents @min-[56rem]/home:flex @min-[56rem]/home:min-w-0 @min-[56rem]/home:flex-col @min-[56rem]/home:gap-5">

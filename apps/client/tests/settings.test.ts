@@ -12,6 +12,7 @@ import {
 import { createAccountDateFormat } from "../src/entities/account/model/date-format";
 
 const settings: Settings = {
+  recommendationsEnabled: false,
   historyLine: false,
   preferredStatsPeriod: "month",
   nbElements: 10,

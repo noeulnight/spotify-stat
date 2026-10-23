@@ -13,6 +13,7 @@ export interface User {
   lastTimestamp: number;
   tracks: Schema.Types.ObjectId[];
   settings: {
+    recommendationsEnabled?: boolean;
     historyLine: boolean;
     preferredStatsPeriod: string;
     nbElements: number;
@@ -43,6 +44,7 @@ export const UserSchema = new Schema<User>(
       default: [],
     },
     settings: {
+      recommendationsEnabled: { type: Boolean, default: true },
       historyLine: { type: Boolean, default: true },
       preferredStatsPeriod: { type: String, default: "day" },
       nbElements: { type: Number, default: 10 },

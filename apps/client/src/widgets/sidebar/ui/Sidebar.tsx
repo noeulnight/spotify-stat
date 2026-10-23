@@ -8,6 +8,7 @@ import {
   RiUser2Fill,
   RiHistoryFill,
   RiSettings3Fill,
+  RiMusic2Line,
 } from "react-icons/ri";
 import {
   Sidebar as SidebarPrimitive,
@@ -23,6 +24,8 @@ import {
 } from "@/shared/ui/sidebar";
 
 import type { ApiClient } from "../../../shared/api";
+import { useApiRuntime } from "../../../shared/api";
+import { useAccount } from "../../../entities/account";
 import { SearchDialog } from "../../../features/search";
 import { SidebarFooterContent } from "./SidebarFooterContent";
 
@@ -37,6 +40,11 @@ const menuGroups: {
       { label: "Recent", icon: RiHistoryFill, href: "/recent" },
       { label: "Stats", icon: RiBarChart2Fill, href: "/stats" },
       { label: "Longest session", icon: RiTimeFill, href: "/longest-session" },
+      {
+        label: "Recommendations",
+        icon: RiMusic2Line,
+        href: "/recommendations",
+      },
     ],
   },
   {
@@ -58,6 +66,12 @@ export function Sidebar({
   activePath?: string;
   publicToken?: string;
 }) {
+  const { queryClient } = useApiRuntime(publicToken);
+  const account = useAccount(client, queryClient);
+  const recommendationsDisabled =
+    publicToken &&
+    account.data?.status &&
+    account.data.user.settings.recommendationsEnabled === false;
   const prefix = publicToken ? `/share/${encodeURIComponent(publicToken)}` : "";
   const pagePath = prefix ? activePath.slice(prefix.length) || "/" : activePath;
   return (
@@ -78,30 +92,35 @@ export function Sidebar({
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map(({ label, icon: Icon, href }) => (
-                  <SidebarMenuItem key={label}>
-                    <SidebarMenuButton
-                      render={
-                        href ? (
-                          <a
-                            href={
-                              prefix
-                                ? `${prefix}${href === "/" ? "" : href}`
-                                : href
-                            }
-                            aria-current={
-                              href === pagePath ? "page" : undefined
-                            }
-                          />
-                        ) : undefined
-                      }
-                      isActive={href === pagePath}
-                    >
-                      <Icon aria-hidden="true" />
-                      <span>{label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {group.items
+                  .filter(
+                    ({ href }) =>
+                      !recommendationsDisabled || href !== "/recommendations",
+                  )
+                  .map(({ label, icon: Icon, href }) => (
+                    <SidebarMenuItem key={label}>
+                      <SidebarMenuButton
+                        render={
+                          href ? (
+                            <a
+                              href={
+                                prefix
+                                  ? `${prefix}${href === "/" ? "" : href}`
+                                  : href
+                              }
+                              aria-current={
+                                href === pagePath ? "page" : undefined
+                              }
+                            />
+                          ) : undefined
+                        }
+                        isActive={href === pagePath}
+                      >
+                        <Icon aria-hidden="true" />
+                        <span>{label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

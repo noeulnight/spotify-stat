@@ -73,6 +73,8 @@ export class SpotifyAPI {
     const client = await this.checkToken();
     return client.put("/me/player/play", {
       data: { uris: [trackUri] },
+      priority: "high",
+      retry429MaxAttempts: 0,
       responseType: "none",
     });
   }
@@ -191,6 +193,19 @@ export class SpotifyAPI {
       artists.push(artist);
     }
     return artists;
+  }
+
+  public async searchTracks(query: string) {
+    const client = await this.checkToken();
+    const { data } = await client.get<{ tracks: { items: SpotifyTrack[] } }>(
+      "/search",
+      {
+        params: { q: query, type: "track", limit: "10" },
+        priority: "high",
+        retry429MaxAttempts: 0,
+      },
+    );
+    return data.tracks.items.filter((track) => track?.id);
   }
 
   public async search(track: string, artist: string) {

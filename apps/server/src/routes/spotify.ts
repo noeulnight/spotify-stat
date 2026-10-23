@@ -2,7 +2,6 @@ import { Router } from "express";
 import { z } from "zod";
 
 import {
-  getTrackBySpotifyId,
   getSongs,
   getSongsPer,
   getMostListenedSongs,
@@ -29,7 +28,6 @@ import {
 import { playbackActions } from "../tools/apis/playback";
 import { HttpError } from "../tools/apis/queueHttpClient";
 import { DateFormatter, intervalToDisplay } from "../tools/date";
-import { logger } from "../tools/logger";
 import {
   affinityAllowed,
   isLoggedOrGuest,
@@ -43,7 +41,7 @@ import { toDate, toNumber } from "../tools/zod";
 
 export const router = Router();
 
-const playSchema = z.object({ id: z.string() });
+const playSchema = z.object({ id: z.string().regex(/^[A-Za-z0-9]{22}$/) });
 const playbackSchema = z.object({ action: z.enum(playbackActions) });
 
 router.post("/playback/:action", logged, withHttpClient, async (req, res) => {
@@ -71,21 +69,19 @@ router.post("/play", logged, withHttpClient, async (req, res) => {
   const { id } = validate(req.body, playSchema);
 
   try {
-    const track = await getTrackBySpotifyId(id);
-
-    if (!track) {
-      res.status(400).end();
-      return;
-    }
-    await client.playTrack(track.uri);
+    await client.playTrack(`spotify:track:${id}`);
     res.status(200).end();
-  } catch (e) {
-    if (e.response) {
-      logger.error(e.response.data);
-      res.status(400).send(e.response.data.error);
+  } catch (error) {
+    if (error instanceof HttpError) {
+      res
+        .status(error.status)
+        .json({
+          code: "SPOTIFY_ERROR",
+          reason: error.status === 404 ? "NO_ACTIVE_DEVICE" : undefined,
+        });
       return;
     }
-    throw e;
+    throw error;
   }
 });
 

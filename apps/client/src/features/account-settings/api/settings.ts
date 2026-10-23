@@ -3,6 +3,7 @@ import type { User } from "../../../entities/account";
 
 export type Settings = Pick<
   User["settings"],
+  | "recommendationsEnabled"
   | "historyLine"
   | "preferredStatsPeriod"
   | "nbElements"

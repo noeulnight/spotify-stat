@@ -57,6 +57,7 @@ export function usePageBreadcrumb(activePath: string, publicToken?: string) {
   if (path === "/stats") return [{ label: "Stats" }];
   if (path === "/recent") return [{ label: "Recent" }];
   if (path === "/now-playing") return [{ label: "Now playing" }];
+  if (path === "/recommendations") return [{ label: "Recommendations" }];
   if (path === "/settings") return [{ label: "Settings" }];
   if (path === "/registrations-disabled")
     return [{ label: "Registrations closed" }];

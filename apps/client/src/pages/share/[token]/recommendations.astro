@@ -1,0 +1,21 @@
+---
+import AppLayout from "../../../layouts/AppLayout.astro";
+import { SongRecommendations } from "../../../features/song-recommendations";
+import { PageSkeleton } from "../../../shared/ui/page-skeleton";
+export const prerender = false;
+const publicToken = Astro.params.token!;
+---
+
+<AppLayout title="Recommendations · Spotistat" publicToken={publicToken}>
+  <section aria-labelledby="recommendations-title" class="space-y-4">
+    <h1
+      id="recommendations-title"
+      class="text-2xl font-semibold tracking-tight"
+    >
+      Recommendations
+    </h1>
+    <SongRecommendations publicToken={publicToken} client:only="react">
+      <PageSkeleton slot="fallback" layout="list" />
+    </SongRecommendations>
+  </section>
+</AppLayout>

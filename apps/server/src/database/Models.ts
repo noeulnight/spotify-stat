@@ -10,6 +10,10 @@ import { LyricsCacheSchema } from "./schemas/lyricsCache";
 import { MigrationSchema } from "./schemas/migration";
 import { PrivateDataSchema } from "./schemas/privateData";
 import {
+  RecommendationSchema,
+  RecommendationRateSchema,
+} from "./schemas/recommendation";
+import {
   StatsHourlyEntitySchema,
   StatsHourlySummarySchema,
   StatsLifetimeEntitySchema,
@@ -20,6 +24,14 @@ import { TrackSchema } from "./schemas/track";
 import { UserSchema } from "./schemas/user";
 
 export const UserModel = model("User", UserSchema);
+export const RecommendationModel = model(
+  "Recommendation",
+  RecommendationSchema,
+);
+export const RecommendationRateModel = model(
+  "RecommendationRate",
+  RecommendationRateSchema,
+);
 export const InfosModel = model("Infos", InfosSchema);
 export const ArtistModel = model("Artist", ArtistSchema);
 export const AlbumModel = model("Album", AlbumSchema);
